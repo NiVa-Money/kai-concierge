@@ -48,16 +48,6 @@ const PredictiveTab: React.FC = () => {
       urgency: 'medium'
     },
     {
-      id: '3',
-      title: 'Art Gallery Opening',
-      description: 'Contemporary art exhibition featuring artists from your collection',
-      icon: <Sparkles className="w-6 h-6" />,
-      reason: 'Art collection analysis + social calendar',
-      confidence: 78,
-      category: 'Events',
-      urgency: 'low'
-    },
-    {
       id: '4',
       title: 'Wellness Retreat Booking',
       description: 'Quarterly wellness retreat based on your health-conscious lifestyle',
@@ -101,7 +91,7 @@ const PredictiveTab: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h2 className="text-2xl font-light text-white mb-2">
             Predictive Services

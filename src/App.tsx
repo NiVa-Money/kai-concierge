@@ -1,18 +1,23 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ChatProvider } from './contexts/ChatContext';
-import LoginPage from './components/auth/LoginPage';
-import SocialSetup from './components/auth/SocialSetup';
-import TabbedChatInterface from './components/chat/TabbedChatInterface';
-import OpsDashboard from './components/ops/OpsDashboard';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ChatProvider } from "./contexts/ChatContext";
+import LoginPage from "./components/auth/LoginPage";
+import SocialSetup from "./components/auth/SocialSetup";
+import TabbedChatInterface from "./components/chat/TabbedChatInterface";
+import OpsDashboard from "./components/ops/OpsDashboard";
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
           <p className="text-white">Loading kai...</p>
@@ -26,9 +31,10 @@ const AppContent: React.FC = () => {
   }
 
   // Check if user needs to complete social setup
-  const needsSocialSetup = !user.socialHandles?.instagram && 
-                          !user.socialHandles?.linkedin && 
-                          !user.socialHandles?.twitter;
+  const needsSocialSetup =
+    !user.socialHandles?.instagram &&
+    !user.socialHandles?.linkedin &&
+    !user.socialHandles?.twitter;
 
   if (needsSocialSetup) {
     return <SocialSetup />;
@@ -36,9 +42,10 @@ const AppContent: React.FC = () => {
 
   return (
     <Routes>
-      <Route path="/" element={
-        user.isOpsTeam ? <OpsDashboard /> : <TabbedChatInterface />
-      } />
+      <Route
+        path="/"
+        element={user.isOpsTeam ? <OpsDashboard /> : <TabbedChatInterface />}
+      />
       <Route path="/ops" element={<OpsDashboard />} />
       <Route path="/chat" element={<TabbedChatInterface />} />
       <Route path="*" element={<Navigate to="/" replace />} />

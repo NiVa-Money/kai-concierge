@@ -56,7 +56,7 @@ const ProfileTab: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Profile Header */}
         <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-6 mb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
