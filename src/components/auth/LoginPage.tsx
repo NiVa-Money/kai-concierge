@@ -80,7 +80,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Chrome } from "lucide-react";
-import { login } from "../../api";
+import { getUserInfo, login } from "../../api";
 import { useNavigate } from "react-router-dom";
 
 const LoginPage: React.FC = () => {
@@ -100,10 +100,14 @@ const LoginPage: React.FC = () => {
     setError("");
     try {
       const response = await login({ email, password });
-      console.log("Logged in user ID:", response.data.userId);
-      localStorage.setItem("userId", response.data.userId);
-      updateUser(response.data);
-      navigate("/social-setup"); // Redirect to home page after successful login
+      const userId = response.data.userId;
+      localStorage.setItem("userId", userId);
+
+      // Fetch complete user profile
+      const profile = await getUserInfo(userId);
+      updateUser(profile.data); // now matches Partial<User>
+
+      navigate("/social-setup");
     } catch (err: any) {
       console.error(err);
       setError("Invalid email or password");

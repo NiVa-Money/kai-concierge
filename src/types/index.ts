@@ -1,7 +1,7 @@
 export interface User {
-  id: string;
-  name: string;
-  email: string;
+  id?: string;
+  name?: string;
+  email?: string;
   avatar?: string;
   socialHandles?: {
     instagram?: string;
@@ -9,11 +9,11 @@ export interface User {
     twitter?: string;
   };
   persona?: {
-    style: string;
-    preferences: string[];
-    profession: string;
-    lifestyle: string[];
-    tone: string;
+    style?: string;
+    preferences?: string[];
+    profession?: string;
+    lifestyle?: string[];
+    tone?: string;
   };
   isOpsTeam?: boolean;
 }
@@ -22,8 +22,8 @@ export interface Message {
   id: string;
   content: string;
   timestamp: Date;
-  sender: 'user' | 'ai';
-  type: 'text' | 'clarification' | 'confirmation';
+  sender: "user" | "ai";
+  type: "text" | "clarification" | "confirmation";
 }
 
 export interface Ticket {
@@ -31,9 +31,9 @@ export interface Ticket {
   userId: string;
   title: string;
   description: string;
-  type: 'travel' | 'dining' | 'events' | 'sourcing' | 'scheduling' | 'other';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'new' | 'in_progress' | 'completed' | 'cancelled';
+  type: "travel" | "dining" | "events" | "sourcing" | "scheduling" | "other";
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "new" | "in_progress" | "completed" | "cancelled";
   messages: Message[];
   createdAt: Date;
   updatedAt: Date;
