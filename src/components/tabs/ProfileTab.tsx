@@ -3,8 +3,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useChat } from '../../contexts/ChatContext';
 import { 
   User, 
-  Calendar, 
-  TrendingUp, 
   Clock, 
   Star,
   Activity,
@@ -54,6 +52,12 @@ const ProfileTab: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/login"; // force navigation
+  };
+  
+
   return (
     <div className="flex-1 overflow-y-auto p-6">
       <div className="max-w-6xl mx-auto">
@@ -66,7 +70,9 @@ const ProfileTab: React.FC = () => {
               className="w-20 h-20 rounded-full border-2 border-amber-400"
             />
             <div className="flex-1">
-              <h2 className="text-2xl font-light text-white mb-1">{user?.name}</h2>
+              <h2 className="text-2xl font-light text-white mb-1">
+                {user?.name}
+              </h2>
               <p className="text-slate-400 mb-3">{user?.email}</p>
               <div className="flex flex-wrap gap-2">
                 {user?.persona.preferences.map((pref, index) => (
@@ -83,8 +89,8 @@ const ProfileTab: React.FC = () => {
               <button className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
                 <Settings className="w-5 h-5 text-slate-400" />
               </button>
-              <button 
-                onClick={logout}
+              <button
+                onClick={handleLogout}
                 className="p-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors"
               >
                 <LogOut className="w-5 h-5 text-red-400" />
@@ -99,43 +105,51 @@ const ProfileTab: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-400 text-sm">Total Requests</p>
-                <p className="text-2xl font-semibold text-white">{stats.totalRequests}</p>
+                <p className="text-2xl font-semibold text-white">
+                  {stats.totalRequests}
+                </p>
               </div>
               <div className="p-2 bg-blue-500/20 rounded-lg">
                 <Target className="w-5 h-5 text-blue-400" />
               </div>
             </div>
           </div>
-          
+
           <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-400 text-sm">Completed</p>
-                <p className="text-2xl font-semibold text-white">{stats.completedTasks}</p>
+                <p className="text-2xl font-semibold text-white">
+                  {stats.completedTasks}
+                </p>
               </div>
               <div className="p-2 bg-green-500/20 rounded-lg">
                 <Award className="w-5 h-5 text-green-400" />
               </div>
             </div>
           </div>
-          
+
           <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-400 text-sm">Avg Response</p>
-                <p className="text-2xl font-semibold text-white">{stats.avgResponseTime}</p>
+                <p className="text-2xl font-semibold text-white">
+                  {stats.avgResponseTime}
+                </p>
               </div>
               <div className="p-2 bg-yellow-500/20 rounded-lg">
                 <Zap className="w-5 h-5 text-yellow-400" />
               </div>
             </div>
           </div>
-          
+
           <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-400 text-sm">Satisfaction</p>
-                <p className="text-2xl font-semibold text-white">{stats.satisfactionScore}</p>
+                <p className="text-2xl font-semibold text-white">
+                  {stats.satisfactionScore}
+                </p>
               </div>
               <div className="p-2 bg-purple-500/20 rounded-lg">
                 <Star className="w-5 h-5 text-purple-400" />
@@ -151,18 +165,20 @@ const ProfileTab: React.FC = () => {
               <User className="w-5 h-5 mr-2 text-amber-400" />
               AI Persona Profile
             </h3>
-            
+
             <div className="space-y-4">
               <div>
                 <h4 className="text-slate-300 font-medium mb-2">Style</h4>
                 <p className="text-slate-400 text-sm">{user?.persona.style}</p>
               </div>
-              
+
               <div>
                 <h4 className="text-slate-300 font-medium mb-2">Profession</h4>
-                <p className="text-slate-400 text-sm">{user?.persona.profession}</p>
+                <p className="text-slate-400 text-sm">
+                  {user?.persona.profession}
+                </p>
               </div>
-              
+
               <div>
                 <h4 className="text-slate-300 font-medium mb-2">Lifestyle</h4>
                 <div className="flex flex-wrap gap-2">
@@ -176,9 +192,11 @@ const ProfileTab: React.FC = () => {
                   ))}
                 </div>
               </div>
-              
+
               <div>
-                <h4 className="text-slate-300 font-medium mb-2">Communication Tone</h4>
+                <h4 className="text-slate-300 font-medium mb-2">
+                  Communication Tone
+                </h4>
                 <p className="text-slate-400 text-sm">{user?.persona.tone}</p>
               </div>
             </div>
@@ -190,7 +208,7 @@ const ProfileTab: React.FC = () => {
               <Activity className="w-5 h-5 mr-2 text-amber-400" />
               Connected Accounts
             </h3>
-            
+
             <div className="space-y-3">
               {user?.socialHandles?.instagram && (
                 <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
@@ -198,35 +216,43 @@ const ProfileTab: React.FC = () => {
                     <Instagram className="w-5 h-5 text-pink-400" />
                     <span className="text-white">Instagram</span>
                   </div>
-                  <span className="text-slate-400 text-sm">{user.socialHandles.instagram}</span>
+                  <span className="text-slate-400 text-sm">
+                    {user.socialHandles.instagram}
+                  </span>
                 </div>
               )}
-              
+
               {user?.socialHandles?.linkedin && (
                 <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Linkedin className="w-5 h-5 text-blue-400" />
                     <span className="text-white">LinkedIn</span>
                   </div>
-                  <span className="text-slate-400 text-sm">{user.socialHandles.linkedin}</span>
+                  <span className="text-slate-400 text-sm">
+                    {user.socialHandles.linkedin}
+                  </span>
                 </div>
               )}
-              
+
               {user?.socialHandles?.twitter && (
                 <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Twitter className="w-5 h-5 text-sky-400" />
                     <span className="text-white">Twitter</span>
                   </div>
-                  <span className="text-slate-400 text-sm">{user.socialHandles.twitter}</span>
+                  <span className="text-slate-400 text-sm">
+                    {user.socialHandles.twitter}
+                  </span>
                 </div>
               )}
-              
-              {!user?.socialHandles?.instagram && !user?.socialHandles?.linkedin && !user?.socialHandles?.twitter && (
-                <p className="text-slate-400 text-sm text-center py-4">
-                  No social accounts connected
-                </p>
-              )}
+
+              {!user?.socialHandles?.instagram &&
+                !user?.socialHandles?.linkedin &&
+                !user?.socialHandles?.twitter && (
+                  <p className="text-slate-400 text-sm text-center py-4">
+                    No social accounts connected
+                  </p>
+                )}
             </div>
           </div>
         </div>
@@ -237,7 +263,7 @@ const ProfileTab: React.FC = () => {
             <Clock className="w-5 h-5 mr-2 text-amber-400" />
             Recent Activity
           </h3>
-          
+
           <div className="space-y-3">
             {recentActivity.map((activity) => (
               <div
@@ -245,7 +271,9 @@ const ProfileTab: React.FC = () => {
                 className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors"
               >
                 <div className="flex items-center space-x-3">
-                  <span className={`text-lg ${getStatusColor(activity.status)}`}>
+                  <span
+                    className={`text-lg ${getStatusColor(activity.status)}`}
+                  >
                     {getStatusIcon(activity.status)}
                   </span>
                   <span className="text-white">{activity.action}</span>

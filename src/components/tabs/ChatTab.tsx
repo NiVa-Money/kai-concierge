@@ -1,206 +1,418 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useChat } from '../../contexts/ChatContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { Send, Settings, Zap, AlertTriangle } from 'lucide-react';
+// /* eslint-disable @typescript-eslint/no-explicit-any */
+// import React, { useEffect, useRef, useState } from "react";
+// import { createOrUpdateSession, endSession } from "../../api";
+// import { Send } from "lucide-react";
+// import { useAuth } from "../../contexts/AuthContext";
+
+// const ChatTab: React.FC = () => {
+//   const [input, setInput] = useState("");
+//   const [messages, setMessages] = useState<any[]>([]);
+//   const [sessionId, setSessionId] = useState<string | null>(null);
+//   const [isTyping, setIsTyping] = useState(false);
+//   const messagesEndRef = useRef<HTMLDivElement>(null);
+//   const { user } = useAuth();
+
+//   const userId = localStorage.getItem("userId");
+
+//   const scrollToBottom = () => {
+//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//   };
+
+//   useEffect(() => {
+//     scrollToBottom();
+//   }, [messages, isTyping]);
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault();
+
+//     if (!input.trim() || !userId) return;
+
+//     const userMsg = {
+//       id: Date.now().toString(),
+//       sender: "user",
+//       content: input,
+//       timestamp: new Date(),
+//     };
+
+//     setMessages((prev) => [...prev, userMsg]);
+//     setInput("");
+//     setIsTyping(true);
+
+//     try {
+//       const res = await createOrUpdateSession({
+//         userId,
+//         sessionId: sessionId ?? undefined,
+//         question: input,
+//       });
+
+//       const agentMsg = {
+//         id: Date.now().toString() + "-agent",
+//         sender: "agent",
+//         content: res.data.agentResponse,
+//         timestamp: new Date(),
+//       };
+
+//       setMessages((prev) => [...prev, agentMsg]);
+//       setSessionId(res.data.sessionId);
+//       setIsTyping(false);
+
+//       if (res.data.sessionEnd) {
+//         console.log("Session ended. Ticket ID:", res.data.ticketId);
+//       }
+//     } catch (error: any) {
+//       console.error("API error:", error?.response?.data || error.message);
+//       setIsTyping(false);
+//     }
+//   };
+
+//   const handleEndSession = async () => {
+//     if (!userId || !sessionId) return;
+//     try {
+//       await endSession(sessionId, {
+//         userId,
+//         reason: "User ended chat manually",
+//       });
+//       setSessionId(null);
+//       setMessages([]);
+//     } catch (error) {
+//       console.error("Error ending session:", error);
+//     }
+//   };
+
+//   const formatMessage = (content: string) => {
+//     return content.split("\n").map((line, index) =>
+//       line.startsWith("•") ? (
+//         <li key={index} className="ml-4 text-slate-300">
+//           {line.substring(1).trim()}
+//         </li>
+//       ) : (
+//         <p key={index} className="mb-2 last:mb-0">
+//           {line}
+//         </p>
+//       )
+//     );
+//   };
+
+//   return (
+//     <div className="flex flex-col h-full">
+//       {/* Chat Header with Greeting */}
+//       <div className="bg-slate-800/30 border-b border-slate-700 px-6 py-4">
+//         <div className="flex items-center justify-between">
+//           <div>
+//             <h2 className="text-lg font-medium text-white">Kai Concierge</h2>
+//             <div className="flex items-center space-x-2 mt-1">
+//               <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+//               <span className="text-sm text-slate-400">Always available</span>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Greeting */}
+//         <div className="mt-4 text-center">
+//           <div className="flex items-center justify-center space-x-2 mb-2">
+//             <div className="text-4xl animate-bounce">👋</div>
+//             <h3 className="text-xl text-white">
+//               Good evening, {user?.name?.split(" ")[0]}
+//             </h3>
+//           </div>
+
+//           <p className="text-slate-400">How may I assist you today?</p>
+//         </div>
+//       </div>
+
+//       {/* Messages with fixed height and scroll */}
+//       <div className="p-4 space-y-4 overflow-y-auto" style={{ height: "60vh" }}>
+//         {messages.map((msg) => (
+//           <div
+//             key={msg.id}
+//             className={`flex ${
+//               msg.sender === "user" ? "justify-end" : "justify-start"
+//             }`}
+//           >
+//             <div
+//               className={`max-w-xl p-3 rounded-lg ${
+//                 msg.sender === "user"
+//                   ? "bg-amber-400/10 text-amber-300 text-right"
+//                   : "bg-slate-800/50 text-white text-left"
+//               }`}
+//             >
+//               {formatMessage(msg.content)}
+//             </div>
+//           </div>
+//         ))}
+
+//         {isTyping && (
+//           <div className="text-sm text-slate-500 italic">
+//             Agent is typing...
+//           </div>
+//         )}
+//         <div ref={messagesEndRef} />
+//       </div>
+
+//       {sessionId && (
+//         <div className="text-center mt-2">
+//           <button
+//             onClick={handleEndSession}
+//             className="text-sm text-amber-400 hover:underline"
+//           >
+//             End Session
+//           </button>
+//         </div>
+//       )}
+
+//       {/* Quick Suggestions */}
+//       {/* <div className="px-4 pt-2 pb-3 border-t border-slate-700 bg-slate-900 overflow-x-auto">
+//         <div className="text-sm text-slate-400 mb-2">Quick requests:</div>
+//         <div className="flex gap-2 whitespace-nowrap">
+//           {[
+//             "Book me a flight to Tokyo next week",
+//             "Find me a yacht charter in the Mediterranean",
+//             "Arrange a private shopping experience",
+//             "Schedule a wellness retreat this month",
+//           ].map((text, idx) => (
+//             <button
+//               key={idx}
+//               type="button"
+//               onClick={() => setInput(text)}
+//               className="bg-slate-800 hover:bg-slate-700 text-white text-sm px-4 py-2 rounded border border-slate-600 transition-all"
+//             >
+//               {text}
+//             </button>
+//           ))}
+//         </div>
+//       </div> */}
+
+//       {/* Input */}
+//       <form
+//         onSubmit={handleSubmit}
+//         className="p-4 border-t border-slate-700 bg-slate-900 flex space-x-2"
+//       >
+//         <input
+//           type="text"
+//           value={input}
+//           onChange={(e) => setInput(e.target.value)}
+//           placeholder="Ask anything..."
+//           className="flex-1 bg-slate-800 rounded px-3 py-2 text-white focus:outline-none"
+//         />
+//         <button
+//           type="submit"
+//           className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2 rounded"
+//         >
+//           <Send className="w-5 h-5" />
+//         </button>
+//       </form>
+//     </div>
+//   );
+// };
+
+// export default ChatTab;
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useRef, useState } from "react";
+import { createOrUpdateSession, endSession } from "../../api";
+import { Send } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ChatTab: React.FC = () => {
-  const { messages, sendMessage, isTyping } = useChat();
-  const { user } = useAuth();
-  const [input, setInput] = useState('');
-  const [promptInjection, setPromptInjection] = useState('');
-  const [showPromptInjection, setShowPromptInjection] = useState(false);
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<any[]>([]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+
+  const userId = localStorage.getItem("userId");
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim()) {
-      // Combine user input with prompt injection if provided
-      const finalMessage = promptInjection 
-        ? `${input}\n\n[System Context: ${promptInjection}]`
-        : input;
-      
-      sendMessage(finalMessage);
-      setInput('');
+
+    if (!input.trim() || !userId) return;
+
+    const userMsg = {
+      id: Date.now().toString(),
+      sender: "user",
+      content: input,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setIsTyping(true);
+
+    try {
+      const res = await createOrUpdateSession({
+        userId,
+        sessionId: sessionId ?? undefined,
+        question: input,
+      });
+
+      const agentMsg = {
+        id: Date.now().toString() + "-agent",
+        sender: "agent",
+        content: res.data.agentResponse,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, agentMsg]);
+      setSessionId(res.data.sessionId);
+      setIsTyping(false);
+
+      if (res.data.sessionEnd) {
+        console.log("Session ended. Ticket ID:", res.data.ticketId);
+      }
+    } catch (error: any) {
+      console.error("API error:", error?.response?.data || error.message);
+      setIsTyping(false);
+    }
+  };
+
+  const handleEndSession = async () => {
+    if (!userId || !sessionId) return;
+    try {
+      await endSession(sessionId, {
+        userId,
+        reason: "User ended chat manually",
+      });
+      setSessionId(null);
+      setMessages([]);
+    } catch (error) {
+      console.error("Error ending session:", error);
     }
   };
 
   const formatMessage = (content: string) => {
-    // Remove system context from display
-    const displayContent = content.replace(/\n\n\[System Context:.*?\]$/, '');
-    
-    return displayContent.split('\n').map((line, index) => {
-      if (line.startsWith('•')) {
-        return (
-          <li key={index} className="ml-4 text-slate-300">
-            {line.substring(1).trim()}
-          </li>
-        );
-      }
-      return (
+    return content.split("\n").map((line, index) =>
+      line.startsWith("•") ? (
+        <li key={index} className="ml-4 text-slate-300">
+          {line.substring(1).trim()}
+        </li>
+      ) : (
         <p key={index} className="mb-2 last:mb-0">
           {line}
         </p>
-      );
-    });
+      )
+    );
   };
 
-  const quickPrompts = [
-    "I need a last-minute reservation for tonight",
-    "Book me a flight to Tokyo next week",
-    "Find me a yacht charter in the Mediterranean",
-    "Arrange a private shopping experience",
-    "Schedule a wellness retreat this month"
-  ];
-
   return (
-    <div className="flex-1 flex flex-col">
-      {/* Chat Header */}
-      <div className="bg-slate-800/30 border-b border-slate-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-medium text-white">AI Concierge</h2>
-            <div className="flex items-center space-x-2 mt-1">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-              <span className="text-sm text-slate-400">Always available</span>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowPromptInjection(!showPromptInjection)}
-            className={`p-2 rounded-lg transition-colors ${
-              showPromptInjection 
-                ? 'bg-amber-400/20 text-amber-400' 
-                : 'hover:bg-slate-700 text-slate-400'
-            }`}
-            title="Advanced Settings"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Prompt Injection Panel */}
-      {showPromptInjection && (
-        <div className="bg-slate-800/50 border-b border-slate-700 p-4">
-          <div className="flex items-center space-x-2 mb-3">
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span className="text-sm font-medium text-amber-400">Prompt Injection</span>
-          </div>
-          <textarea
-            value={promptInjection}
-            onChange={(e) => setPromptInjection(e.target.value)}
-            placeholder="Add system context or special instructions for the AI agent..."
-            className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all text-sm resize-none"
-            rows={3}
-          />
-          <p className="text-xs text-slate-500 mt-2">
-            This context will be sent with your message to influence AI behavior
-          </p>
-        </div>
-      )}
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex flex-col h-full relative">
+      {/* Greeting Animation */}
+      <AnimatePresence>
         {messages.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-4">👋</div>
-            <h3 className="text-xl text-white mb-2">Good evening, {user?.name?.split(' ')[0]}</h3>
-            <p className="text-slate-400 mb-6">How may I assist you today?</p>
-            
-            {/* Quick Prompts */}
-            <div className="max-w-md mx-auto">
-              <p className="text-sm text-slate-400 mb-3">Quick requests:</p>
-              <div className="space-y-2">
-                {quickPrompts.map((prompt, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setInput(prompt)}
-                    className="w-full text-left bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 hover:border-slate-600 rounded-lg px-4 py-3 text-sm text-slate-300 transition-all"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <div className="max-w-3xl mx-auto space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 bg-gradient-to-br from-slate-900 to-slate-800 z-10"
+          >
+            <div className="text-6xl mb-4 animate-bounce">👋</div>
+            <h3 className="text-2xl text-white mb-2 font-semibold">
+              Good evening, {user?.name?.split(" ")[0]}
+            </h3>
+            <p className="text-slate-400 mb-4 text-lg">
+              How may I assist you today?
+            </p>
+            <img
+              src="https://illustrations.popsy.co/white/chat-bot.svg"
+              alt="assistant"
+              className="w-48 opacity-80 mb-6"
+            />
+            <form
+              onSubmit={handleSubmit}
+              className="w-full max-w-xl flex space-x-2"
             >
-              <div
-                className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
-                  message.sender === 'user'
-                    ? 'bg-amber-400 text-slate-900'
-                    : 'bg-slate-800 text-white'
-                }`}
-              >
-                <div className="text-sm">
-                  {formatMessage(message.content)}
-                </div>
-                <div className="text-xs opacity-70 mt-2">
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-            </div>
-          ))}
-          
-          {isTyping && (
-            <div className="flex justify-start">
-              <div className="bg-slate-800 text-white px-4 py-3 rounded-2xl">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse"></div>
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse delay-100"></div>
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse delay-200"></div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input */}
-      <div className="bg-slate-800/50 backdrop-blur-lg border-t border-slate-700 p-4">
-        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
-          <div className="flex space-x-3">
-            <div className="flex-1 relative">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your request..."
-                className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 pr-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+                placeholder="Ask anything..."
+                className="flex-1 bg-slate-800 rounded px-3 py-2 text-white focus:outline-none"
               />
-              {promptInjection && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <Zap className="w-4 h-4 text-amber-400" title="Prompt injection active" />
-                </div>
-              )}
-            </div>
-            <button
-              type="submit"
-              disabled={!input.trim()}
-              className="bg-amber-400 hover:bg-amber-500 text-slate-900 p-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              <button
+                type="submit"
+                className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2 rounded"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Messages with fixed height and scroll */}
+      <div className="p-4 space-y-4 overflow-y-auto" style={{ height: "60vh" }}>
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex ${
+              msg.sender === "user" ? "justify-end" : "justify-start"
+            }`}
+          >
+            <div
+              className={`max-w-xl p-3 rounded-lg ${
+                msg.sender === "user"
+                  ? "bg-amber-400/10 text-amber-300 text-right"
+                  : "bg-slate-800/50 text-white text-left"
+              }`}
             >
-              <Send className="w-5 h-5" />
-            </button>
+              {formatMessage(msg.content)}
+            </div>
           </div>
-        </form>
+        ))}
+
+        {isTyping && (
+          <div className="text-sm text-slate-500 italic">
+            Agent is typing...
+          </div>
+        )}
+        <div ref={messagesEndRef} />
       </div>
+
+      {/* End Session Button */}
+      {sessionId && (
+        <div className="text-center py-2 bg-slate-900 border-t border-slate-800">
+          <button
+            onClick={handleEndSession}
+            className="text-sm text-amber-400 hover:underline"
+          >
+            End Session
+          </button>
+        </div>
+      )}
+
+      {/* Input */}
+      {messages.length > 0 && (
+        <form
+          onSubmit={handleSubmit}
+          className="p-4 border-t border-slate-700 bg-slate-900 flex space-x-2"
+        >
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask anything..."
+            className="flex-1 bg-slate-800 rounded px-3 py-2 text-white focus:outline-none"
+          />
+          <button
+            type="submit"
+            className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2 rounded"
+          >
+            <Send className="w-5 h-5" />
+          </button>
+        </form>
+      )}
     </div>
   );
 };
 
 export default ChatTab;
+
