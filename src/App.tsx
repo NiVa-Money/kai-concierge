@@ -11,6 +11,7 @@ import LoginPage from "./components/auth/LoginPage";
 import SocialSetup from "./components/auth/SocialSetup";
 import TabbedChatInterface from "./components/chat/TabbedChatInterface";
 import OpsDashboard from "./components/ops/OpsDashboard";
+import SignupPage from "./components/auth/SignupPage";
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -26,29 +27,41 @@ const AppContent: React.FC = () => {
     );
   }
 
-  if (!user) {
-    return <LoginPage />;
-  }
-
-  // Check if user needs to complete social setup
-  const needsSocialSetup =
-    !user.socialHandles?.instagram &&
-    !user.socialHandles?.linkedin &&
-    !user.socialHandles?.twitter;
-
-  if (needsSocialSetup) {
-    return <SocialSetup />;
-  }
-
   return (
     <Routes>
-      <Route
-        path="/"
-        element={user.isOpsTeam ? <OpsDashboard /> : <TabbedChatInterface />}
-      />
-      <Route path="/ops" element={<OpsDashboard />} />
-      <Route path="/chat" element={<TabbedChatInterface />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+
+      {user ? (
+        <>
+          {/* Redirect to social setup if required */}
+          {!user.socialHandles?.instagram &&
+          !user.socialHandles?.linkedin &&
+          !user.socialHandles?.twitter ? (
+            <>
+              <Route path="/social-setup" element={<SocialSetup />} />
+              <Route
+                path="*"
+                element={<Navigate to="/social-setup" replace />}
+              />
+            </>
+          ) : (
+            <>
+              <Route
+                path="/"
+                element={
+                  user.isOpsTeam ? <OpsDashboard /> : <TabbedChatInterface />
+                }
+              />
+              <Route path="/ops" element={<OpsDashboard />} />
+              <Route path="/chat" element={<TabbedChatInterface />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          )}
+        </>
+      ) : (
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      )}
     </Routes>
   );
 };

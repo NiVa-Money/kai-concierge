@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// apiService.ts
+import axios from "axios";
+
+export const BASE_URL = "https://v0-brightdata-api-examples.vercel.app/api";
+
+export const api = axios.create({
+  baseURL: BASE_URL,
+});
 
 export type Platform = "LinkedIn" | "Twitter" | "Instagram";
 
@@ -40,85 +46,49 @@ export interface PersonaSummary {
 export interface PersonaResponse {
   full_analysis: string;
   summary: PersonaSummary;
-  [key: string]: any; // for analytics, slides, persona_summary, storyboard_slides
+  [key: string]: any;
 }
 
-export interface SuggestedService {
-  name: string;
-  description: string;
-}
-
-// Base URL (replace with actual server if needed)
-const BASE_URL = "https://v0-brightdata-api-examples.vercel.app/api";
-
-/* 1. Scrape LinkedIn */
+// LinkedIn Scraper
 export const scrapeLinkedIn = async (
   url: string
 ): Promise<ScrapedLinkedInData[]> => {
-  const res = await fetch(`${BASE_URL}/scrape/linkedin`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
+  const res = await api.post<ScrapedLinkedInData[]>("/scrape/linkedin", {
+    url,
   });
-
-  if (!res.ok) throw new Error(`LinkedIn scrape failed: ${res.status}`);
-  return await res.json();
+  return res.data;
 };
 
-/* 2. Scrape Twitter */
+// Twitter Scraper
 export const scrapeTwitter = async (
   username: string
 ): Promise<ScrapedTwitterData[]> => {
-  const res = await fetch(`${BASE_URL}/scrape/twitter`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username }),
+  const res = await api.post<ScrapedTwitterData[]>("/scrape/twitter", {
+    username,
   });
-
-  if (!res.ok) throw new Error(`Twitter scrape failed: ${res.status}`);
-  return await res.json();
+  return res.data;
 };
 
-/* 3. Scrape Instagram */
+// Instagram Scraper
 export const scrapeInstagram = async (
   username: string
 ): Promise<ScrapedInstagramData[]> => {
-  const res = await fetch(`${BASE_URL}/scrape/instagram`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username }),
+  const res = await api.post<ScrapedInstagramData[]>("/scrape/instagram", {
+    username,
   });
-
-  if (!res.ok) throw new Error(`Instagram scrape failed: ${res.status}`);
-  return await res.json();
+  return res.data;
 };
 
-/* 4. Generate Persona */
+// Persona Generator
 export const generatePersona = async (
   platform: Platform,
   username: string,
   profileData: any[]
 ): Promise<PersonaResponse> => {
-  const res = await fetch(`${BASE_URL}/generate-persona`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ platform, username, profileData }),
+  const res = await api.post<PersonaResponse>("/generate-persona", {
+    platform,
+    username,
+    profileData,
   });
-
-  if (!res.ok) throw new Error(`Persona generation failed: ${res.status}`);
-  return await res.json();
-};
-
-/* 5. Suggest Services */
-export const suggestServices = async (
-  personaAnalysis: string
-): Promise<SuggestedService[]> => {
-  const res = await fetch(`${BASE_URL}/suggest-services`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ personaAnalysis }),
-  });
-
-  if (!res.ok) throw new Error(`Service suggestion failed: ${res.status}`);
-  return await res.json();
+  return res.data;
 };

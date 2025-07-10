@@ -3,19 +3,19 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
-  socialHandles: {
+  socialHandles?: {
     instagram?: string;
     linkedin?: string;
     twitter?: string;
   };
-  persona: {
+  persona?: {
     style: string;
     preferences: string[];
     profession: string;
     lifestyle: string[];
     tone: string;
   };
-  isOpsTeam: boolean;
+  isOpsTeam?: boolean;
 }
 
 export interface Message {
