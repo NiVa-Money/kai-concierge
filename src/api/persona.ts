@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 
-export const BASE_URL = "https://v0-brightdata-api-examples.vercel.app/api";
+export const BASE_URL =
+  "https://v0-fork-of-brightdata-api-examples-tau.vercel.app/api/api";
 
 export const api = axios.create({
   baseURL: BASE_URL,
