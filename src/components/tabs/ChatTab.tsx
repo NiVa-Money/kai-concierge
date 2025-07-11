@@ -321,11 +321,7 @@ const ChatTab: React.FC = () => {
             <p className="text-slate-400 mb-4 text-lg">
               How may I assist you today?
             </p>
-            <img
-              src="https://illustrations.popsy.co/white/chat-bot.svg"
-              alt="assistant"
-              className="w-48 opacity-80 mb-6"
-            />
+
             <form
               onSubmit={handleSubmit}
               className="w-full max-w-xl flex space-x-2"
@@ -415,4 +411,3 @@ const ChatTab: React.FC = () => {
 };
 
 export default ChatTab;
-

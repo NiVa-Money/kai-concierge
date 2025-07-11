@@ -156,6 +156,7 @@ const SocialSetup: React.FC = () => {
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingPlatform, setLoadingPlatform] = useState<null | string>(null);
+  const [connected, setConnected] = useState<Record<string, boolean>>({});
 
   const navigate = useNavigate();
   const handleConnect = async (
@@ -182,6 +183,8 @@ const SocialSetup: React.FC = () => {
       updateUser({
         [`${platform}Data`]: data,
       });
+
+      setConnected((prev) => ({ ...prev, [platform]: true })); // ✅ set as connected
     } catch (err) {
       console.error(`❌ Error scraping ${platform}:`, err);
     } finally {
@@ -271,7 +274,9 @@ const SocialSetup: React.FC = () => {
                     !handles.instagram || loadingPlatform === "instagram"
                   }
                 >
-                  {loadingPlatform === "instagram"
+                  {connected.instagram
+                    ? "Connected"
+                    : loadingPlatform === "instagram"
                     ? "Connecting..."
                     : "Connect"}
                 </button>
@@ -299,7 +304,11 @@ const SocialSetup: React.FC = () => {
                   onClick={() => handleConnect("linkedin")}
                   disabled={!handles.linkedin || loadingPlatform === "linkedin"}
                 >
-                  {loadingPlatform === "linkedin" ? "Connecting..." : "Connect"}
+                  {connected.linkedin
+                    ? "Connected"
+                    : loadingPlatform === "linkedin"
+                    ? "Connecting..."
+                    : "Connect"}
                 </button>
               </div>
             </div>
@@ -325,7 +334,11 @@ const SocialSetup: React.FC = () => {
                   onClick={() => handleConnect("twitter")}
                   disabled={!handles.twitter || loadingPlatform === "twitter"}
                 >
-                  {loadingPlatform === "twitter" ? "Connecting..." : "Connect"}
+                  {connected.twitter
+                    ? "Connected"
+                    : loadingPlatform === "twitter"
+                    ? "Connecting..."
+                    : "Connect"}
                 </button>
               </div>
             </div>

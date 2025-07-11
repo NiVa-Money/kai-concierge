@@ -2,6 +2,7 @@ import { PersonaResponse } from "../api/persona";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface User {
+  userId?: string;
   id?: string;
   name?: string;
   email?: string;
@@ -26,7 +27,6 @@ export interface User {
   linkedinData?: any[];
   twitterData?: any[];
 }
-
 
 export interface Message {
   id: string;

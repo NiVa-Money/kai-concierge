@@ -18,11 +18,10 @@ const LoginPage: React.FC = () => {
     try {
       const result = await handleGoogleAuth();
 
-      const userId = result.userId;
+      const { userId, name, email } = result;
       localStorage.setItem("userId", userId);
 
-      const profile = await getUserInfo(userId);
-      updateUser(profile.data);
+      updateUser({ userId, name, email }); // Now has actual user info
 
       navigate("/social-setup");
     } catch (err: any) {
