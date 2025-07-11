@@ -145,6 +145,7 @@ import {
 } from "../../api/persona";
 import { Instagram, Linkedin, Twitter, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { User } from "../../types";
 
 const SocialSetup: React.FC = () => {
   const { user, updateUser } = useAuth();
@@ -201,13 +202,14 @@ const SocialSetup: React.FC = () => {
       const username =
         handles.instagram || handles.linkedin || handles.twitter || "";
 
-      const profileData = user?.[`${platform.toLowerCase()}Data`] ?? [];
+      const dataKey = `${platform.toLowerCase()}Data` as keyof User;
+      const profileData = (user?.[dataKey] as any[]) ?? [];
 
       const aiPersona = await generatePersona(platform, username, profileData);
 
       updateUser({
         socialHandles: handles,
-        persona: aiPersona,
+        personaReport: aiPersona,
       });
 
       navigate("/", { replace: true });

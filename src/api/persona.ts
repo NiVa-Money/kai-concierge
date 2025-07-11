@@ -46,9 +46,45 @@ export interface PersonaSummary {
 
 export interface PersonaResponse {
   full_analysis: string;
-  summary: PersonaSummary;
-  [key: string]: any;
+  summary: {
+    key_insights: string[];
+    demographics: string;
+    personality: string;
+    interests: string;
+    shopping: string;
+    recommendations: string;
+  };
+  analytics: {
+    interests: Record<string, number>;
+    personality_traits: Record<string, number>;
+    content_types: Record<string, number>;
+    engagement_style: Record<string, number>;
+    shopping_behavior: Record<string, number>;
+  };
+  slides: Record<string, SlideSection>;
+  persona_summary: {
+    followers: number;
+    posts_count: number;
+    average_engagement: number;
+    primary_interest: string;
+    posting_frequency: string;
+    demographics: string;
+    personality: string;
+    interests: string;
+    shopping: string;
+    recommendations: string;
+  };
+  storyboard_slides: Record<string, SlideSection>;
 }
+
+interface SlideSection {
+  title: string;
+  subtitle?: string;
+  points?: string[];
+  content?: string[];
+  visuals?: string[];
+}
+
 
 // LinkedIn Scraper
 export const scrapeLinkedIn = async (

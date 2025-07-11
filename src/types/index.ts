@@ -1,3 +1,6 @@
+import { PersonaResponse } from "../api/persona";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface User {
   id?: string;
   name?: string;
@@ -15,8 +18,15 @@ export interface User {
     lifestyle?: string[];
     tone?: string;
   };
+  personaReport?: PersonaResponse; // ✅ full AI analysis here
+
   isOpsTeam?: boolean;
+
+  instagramData?: any[];
+  linkedinData?: any[];
+  twitterData?: any[];
 }
+
 
 export interface Message {
   id: string;

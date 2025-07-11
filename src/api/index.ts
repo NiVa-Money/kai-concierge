@@ -65,6 +65,16 @@ export interface Ticket {
   estimated_completion: string | null;
 }
 
+export interface GoogleSignInPayload {
+  name: string;
+  email: string;
+}
+
+export interface GoogleSignInResponse {
+  type: "login" | "signup";
+  userId: string;
+}
+
 // =======================
 // API Functions
 // =======================
@@ -87,6 +97,30 @@ export const signInWithGoogle = async () => {
   } catch (err) {
     console.error("Google sign-in error:", err);
     throw err;
+  }
+};
+
+export const googleSignin = (data: GoogleSignInPayload) =>
+  api.post<GoogleSignInResponse>("/google-signin", data);
+
+export const handleGoogleAuth = async (): Promise<GoogleSignInResponse> => {
+  try {
+    const firebaseUser = await signInWithGoogle();
+
+    if (!firebaseUser.email || !firebaseUser.displayName) {
+      throw new Error("Missing Google account information.");
+    }
+
+    const payload: GoogleSignInPayload = {
+      name: firebaseUser.displayName,
+      email: firebaseUser.email,
+    };
+
+    const response = await googleSignin(payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error during Google auth handling:", error);
+    throw error;
   }
 };
 
