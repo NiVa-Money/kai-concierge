@@ -2,7 +2,7 @@
 import axios from "axios";
 
 export const BASE_URL =
-  "https://v0-fork-of-brightdata-api-examples-tau.vercel.app/api/api";
+  "https://v0-fork-of-brightdata-api-examples-tau.vercel.app/api";
 
 export const api = axios.create({
   baseURL: BASE_URL,
