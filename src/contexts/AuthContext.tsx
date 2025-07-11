@@ -11,7 +11,6 @@ import { login as loginApi, getUserInfo } from "../api";
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
   isLoading: boolean;
@@ -63,31 +62,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const loginWithGoogle = async () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      const mockUser: User = {
-        id: "1",
-        name: "Alexander Sterling",
-        email: "alexander@sterling.com",
-        avatar:
-          "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1",
-        socialHandles: {},
-        persona: {
-          style: "Sophisticated, minimalist",
-          preferences: ["Fine dining", "Luxury travel", "Art collecting"],
-          profession: "Private Equity",
-          lifestyle: ["Health-conscious", "Tech-savvy", "Philanthropic"],
-          tone: "Professional yet approachable",
-        },
-        isOpsTeam: false,
-      };
-      setUser(mockUser);
-      localStorage.setItem("kai-user", JSON.stringify(mockUser));
-      setIsLoading(false);
-    }, 1000);
-  };
-
   const logout = () => {
     setUser(null);
     localStorage.removeItem("kai-user");
@@ -107,7 +81,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       value={{
         user,
         login,
-        loginWithGoogle,
         logout,
         updateUser,
         isLoading,

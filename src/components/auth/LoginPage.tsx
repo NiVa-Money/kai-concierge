@@ -80,11 +80,11 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Chrome } from "lucide-react";
-import { getUserInfo, login } from "../../api";
+import { getUserInfo, login, signInWithGoogle } from "../../api";
 import { useNavigate } from "react-router-dom";
 
 const LoginPage: React.FC = () => {
-  const { loginWithGoogle, isLoading, updateUser } = useAuth();
+  const { isLoading, updateUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -92,7 +92,24 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
-    await loginWithGoogle();
+    setError("");
+    try {
+      const firebaseUser = await signInWithGoogle();
+      if (!firebaseUser || !firebaseUser.email) {
+        throw new Error("Google sign-in failed");
+      }
+
+      // Send Firebase user.email to backend to fetch user profile
+      const userId = firebaseUser.uid;
+      localStorage.setItem("userId", userId);
+
+      const profile = await getUserInfo(userId);
+      updateUser(profile.data);
+      navigate("/social-setup");
+    } catch (err: any) {
+      console.error("Google login error:", err);
+      setError("Google login failed. Please try again.");
+    }
   };
 
   const handleEmailLogin = async () => {

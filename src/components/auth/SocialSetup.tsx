@@ -144,6 +144,7 @@ import {
   generatePersona,
 } from "../../api/persona";
 import { Instagram, Linkedin, Twitter, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const SocialSetup: React.FC = () => {
   const { user, updateUser } = useAuth();
@@ -155,6 +156,7 @@ const SocialSetup: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingPlatform, setLoadingPlatform] = useState<null | string>(null);
 
+  const navigate = useNavigate();
   const handleConnect = async (
     platform: "instagram" | "linkedin" | "twitter"
   ) => {
@@ -207,6 +209,8 @@ const SocialSetup: React.FC = () => {
         socialHandles: handles,
         persona: aiPersona,
       });
+
+      navigate("/", { replace: true });
     } catch (err) {
       console.error("❌ Failed to generate persona:", err);
     } finally {

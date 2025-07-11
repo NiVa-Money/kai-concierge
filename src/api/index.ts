@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "../contexts/firebaseConfig";
 
 // Base Axios instance
 const API_BASE_URL = "http://localhost:5000";
@@ -73,6 +75,20 @@ export const signup = (data: SignupPayload) =>
 
 export const login = (data: LoginPayload) =>
   api.post<{ userId: string }>("/login", data);
+
+export const signInWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    console.log("Signed in as:", user.email);
+    return user;
+  } catch (err) {
+    console.error("Google sign-in error:", err);
+    throw err;
+  }
+};
 
 // User
 export const getUserInfo = (userId: string) =>
