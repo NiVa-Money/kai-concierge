@@ -148,6 +148,14 @@ const TicketDetailsModal: React.FC<Props> = ({ ticket, onClose }) => {
             </div>
           </div>
         )} */}
+
+        {/* Smart Suggestions */}
+        <div className="mt-6">
+          <h3 className="text-sm font-medium mb-1 text-slate-300">
+            Smart Suggestions
+          </h3>
+          <p className="text-sm text-slate-500 italic">Coming soon...</p>
+        </div>
       </div>
     </div>
   );
