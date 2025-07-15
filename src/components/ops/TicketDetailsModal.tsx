@@ -150,12 +150,57 @@ const TicketDetailsModal: React.FC<Props> = ({ ticket, onClose }) => {
         )} */}
 
         {/* Smart Suggestions */}
-        <div className="mt-6">
-          <h3 className="text-sm font-medium mb-1 text-slate-300">
-            Smart Suggestions
-          </h3>
-          <p className="text-sm text-slate-500 italic">Coming soon...</p>
-        </div>
+        {ticket.smart_suggestions && (
+          <div className="mt-6">
+            <h3 className="text-sm font-medium mb-2 text-slate-300">
+              Smart Suggestions
+            </h3>
+            <div className="space-y-4 text-sm text-slate-400">
+              {typeof ticket.smart_suggestions === "string" &&
+                ticket.smart_suggestions
+                  .split("#### ")
+                  .slice(1) // Skip intro
+                  .map((block: string, idx: number) => {
+                    const [titleLine, ...rest] = block.trim().split("\n");
+                    const contentLines = rest
+                      .join("\n")
+                      .split("- ")
+                      .filter(Boolean);
+
+                    // Helper to convert **bold** to <strong>bold</strong>
+                    const renderWithBold = (text: string) => {
+                      const parts = text.split(/(\*\*[^*]+\*\*)/g); // Split by **bold**
+                      return parts.map((part, i) => {
+                        if (part.startsWith("**") && part.endsWith("**")) {
+                          return (
+                            <strong
+                              key={i}
+                              className="text-white font-semibold"
+                            >
+                              {part.slice(2, -2)}
+                            </strong>
+                          );
+                        }
+                        return <span key={i}>{part}</span>;
+                      });
+                    };
+
+                    return (
+                      <div key={idx} className="mb-4">
+                        <h4 className="font-semibold text-white mb-1">
+                          {titleLine}
+                        </h4>
+                        <ul className="list-disc list-inside text-sm text-slate-400 space-y-1">
+                          {contentLines.map((line: string, i: number) => (
+                            <li key={i}>{renderWithBold(line.trim())}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

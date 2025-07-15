@@ -4,7 +4,7 @@ import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../contexts/firebaseConfig";
 
 // Base Axios instance
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "http://localhost:5001";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -63,6 +63,7 @@ export interface Ticket {
   special_instructions: string;
   assigned_concierge: string | null;
   estimated_completion: string | null;
+  smart_suggestions: string;
 }
 
 export interface GoogleSignInPayload {
