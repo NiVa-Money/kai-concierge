@@ -24,21 +24,21 @@ const OpsDashboard: React.FC = () => {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
 
-  useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        const res = await getAllTickets();
-        const safeTickets = res.data.tickets.filter(
-          (t: Ticket) =>
-            typeof t.ticket_id === "string" &&
-            typeof t.client_message === "string"
-        );
-        setTickets(safeTickets);
-      } catch (error) {
-        console.error("Failed to fetch tickets:", error);
-      }
-    };
+  const fetchTickets = async () => {
+    try {
+      const res = await getAllTickets();
+      const safeTickets = res.data.tickets.filter(
+        (t: Ticket) =>
+          typeof t.ticket_id === "string" &&
+          typeof t.client_message === "string"
+      );
+      setTickets(safeTickets);
+    } catch (error) {
+      console.error("Failed to fetch tickets:", error);
+    }
+  };
 
+  useEffect(() => {
     fetchTickets();
   }, []);
 
@@ -311,6 +311,7 @@ const OpsDashboard: React.FC = () => {
           <TicketDetailsModal
             ticket={selectedTicket}
             onClose={() => setSelectedTicket(null)}
+            onUpdate={fetchTickets}
           />
         )}
       </div>

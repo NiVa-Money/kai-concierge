@@ -34,7 +34,7 @@ export interface SessionPayload {
   sessionId?: string;
   question: string;
   aiPersona?: string;
-  persona:string;
+  persona: string;
 }
 
 export interface EndSessionPayload {
@@ -69,22 +69,16 @@ export interface Ticket {
 }
 
 export interface UpdateTicketPayload {
-  status?: "pending" | "in_progress" | "completed";
-  priority?: "low" | "medium" | "high";
-  client_message?: string;
-  timeline?: string;
-  estimated_budget?: string;
-  special_instructions?: string;
-  assigned_concierge?: string;
-  client_contact?: {
-    name: string;
-    phone: string;
-    email?: string;
-  };
-  estimated_completion?: string; // ISO string or null
+  status: "pending" | "in_progress" | "completed";
+  priority: "low" | "medium" | "high";
+  client_message: string;
+  timeline: string;
+  estimated_budget: string;
+  special_instructions: string;
+  assigned_concierge: string;
+  estimated_completion: string | null;
+  smart_suggestions: string;
 }
-
-
 
 export interface GoogleSignInPayload {
   name: string;
