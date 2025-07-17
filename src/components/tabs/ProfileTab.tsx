@@ -21,6 +21,16 @@ const ProfileTab: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
   const { messages, tickets } = useChat();
 
+  const maleAvatar =
+    "https://static.vecteezy.com/system/resources/previews/024/183/525/non_2x/avatar-of-a-man-portrait-of-a-young-guy-illustration-of-male-character-in-modern-color-style-vector.jpg";
+  const femaleAvatar =
+    "https://t4.ftcdn.net/jpg/11/66/06/77/360_F_1166067709_2SooAuPWXp20XkGev7oOT7nuK1VThCsN.jpg";
+
+  const isLikelyFemale = (name: string): boolean => {
+    const femaleNames = ["emma", "olivia", "ava", "mia", "sophia", "sj"];
+    return femaleNames.includes(name.toLowerCase());
+  };
+
   // Fetch full user data if persona is missing
   useEffect(() => {
     const fetchFullUser = async () => {
@@ -28,8 +38,7 @@ const ProfileTab: React.FC = () => {
       if (storedId) {
         try {
           const response = await getUserInfo(storedId);
-
-          // Response is assumed to be the user object from backend
+          console.log("Fetched user:", response.data); // Debug
           updateUser(response.data);
         } catch (err) {
           console.error("Failed to fetch full user info:", err);
@@ -37,9 +46,11 @@ const ProfileTab: React.FC = () => {
       }
     };
 
-    // Always try to hydrate user if not fully loaded
     if (!user || !user.name || !user.email) {
+      console.log("Hydrating user...");
       fetchFullUser();
+    } else {
+      console.log("User already exists:", user);
     }
   }, [user, updateUser]);
 
@@ -115,7 +126,14 @@ const ProfileTab: React.FC = () => {
         <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-6 mb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
             <img
-              src={user?.avatar}
+              src={
+                user?.avatar ||
+                (user?.name
+                  ? isLikelyFemale(user.name)
+                    ? femaleAvatar
+                    : maleAvatar
+                  : maleAvatar)
+              }
               alt={user?.name}
               className="w-20 h-20 rounded-full border-2 border-amber-400"
             />
@@ -123,8 +141,14 @@ const ProfileTab: React.FC = () => {
               <h2 className="text-2xl font-light text-white mb-1">
                 {user?.name}
               </h2>
-              <p className="text-slate-400 mb-3">{user?.email}</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="text-slate-400 mb-1">{user?.email}</p>
+
+              {/* Show age if not null */}
+              {user?.age !== null && user?.age !== undefined && (
+                <p className="text-slate-500 text-sm mb-1">Age: {user.age}</p>
+              )}
+
+              <div className="flex flex-wrap gap-2 mt-2">
                 {user?.persona?.preferences?.map((pref, index) => (
                   <span
                     key={index}
@@ -135,6 +159,7 @@ const ProfileTab: React.FC = () => {
                 ))}
               </div>
             </div>
+
             <div className="flex space-x-2">
               <button className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
                 <Settings className="w-5 h-5 text-slate-400" />

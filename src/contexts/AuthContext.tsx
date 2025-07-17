@@ -69,10 +69,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const updateUser = (updates: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem("kai-user", JSON.stringify(updatedUser));
+    const merged = { ...(user || {}), ...updates };
+    if (merged.name && merged.email && merged.userId) {
+      setUser(merged as User);
+      localStorage.setItem("kai-user", JSON.stringify(merged));
+    } else {
+      console.warn("Incomplete user data, not updating:", merged);
     }
   };
 

@@ -459,6 +459,28 @@ const TicketDetailsModal: React.FC<Props> = ({ ticket, onClose, onUpdate }) => {
           </div>
         )}
 
+        {/* Service Type */}
+        {ticketData.service_type && (
+          <div className="mb-2 text-sm text-slate-400">
+            <strong>Service Type:</strong>{" "}
+            {editMode ? (
+              <input
+                type="text"
+                value={ticketData.service_type}
+                onChange={(e) =>
+                  setTicketData((prev) => ({
+                    ...prev,
+                    service_type: e.target.value,
+                  }))
+                }
+                className="ml-2 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white"
+              />
+            ) : (
+              ticketData.service_type
+            )}
+          </div>
+        )}
+
         {/* Special Instructions */}
         {ticketData.special_instructions && (
           <div className="mb-2 text-sm text-slate-400">
@@ -517,50 +539,14 @@ const TicketDetailsModal: React.FC<Props> = ({ ticket, onClose, onUpdate }) => {
             <h3 className="text-sm font-medium mb-2 text-slate-300">
               Smart Suggestions
             </h3>
-            <div className="space-y-4 text-sm text-slate-400">
-              {typeof ticket.smart_suggestions === "string" &&
-                ticket.smart_suggestions
-                  .split("#### ")
-                  .slice(1) // Skip intro
-                  .map((block: string, idx: number) => {
-                    const [titleLine, ...rest] = block.trim().split("\n");
-                    const contentLines = rest
-                      .join("\n")
-                      .split("- ")
-                      .filter(Boolean);
-
-                    // Helper to convert **bold** to <strong>bold</strong>
-                    const renderWithBold = (text: string) => {
-                      const parts = text.split(/(\*\*[^*]+\*\*)/g); // Split by **bold**
-                      return parts.map((part, i) => {
-                        if (part.startsWith("**") && part.endsWith("**")) {
-                          return (
-                            <strong
-                              key={i}
-                              className="text-white font-semibold"
-                            >
-                              {part.slice(2, -2)}
-                            </strong>
-                          );
-                        }
-                        return <span key={i}>{part}</span>;
-                      });
-                    };
-
-                    return (
-                      <div key={idx} className="mb-4">
-                        <h4 className="font-semibold text-white mb-1">
-                          {titleLine}
-                        </h4>
-                        <ul className="list-disc list-inside text-sm text-slate-400 space-y-1">
-                          {contentLines.map((line: string, i: number) => (
-                            <li key={i}>{renderWithBold(line.trim())}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    );
-                  })}
-            </div>
+            <ul className="list-decimal list-inside space-y-2 text-sm text-slate-400">
+              {ticket.smart_suggestions
+                .split(/\d+\.\s+/) // Split on "1. ", "2. ", etc.
+                .filter((s) => s.trim() !== "")
+                .map((line, i) => (
+                  <li key={i}>{line.trim()}</li>
+                ))}
+            </ul>
           </div>
         )}
       </div>

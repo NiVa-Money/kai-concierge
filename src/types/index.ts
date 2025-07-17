@@ -5,6 +5,7 @@ export interface User {
   userId?: string;
   id?: string;
   name?: string;
+  age?: number | null; 
   email?: string;
   avatar?: string;
   socialHandles?: {
