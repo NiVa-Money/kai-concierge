@@ -28,7 +28,12 @@ const OpsDashboard: React.FC = () => {
     const fetchTickets = async () => {
       try {
         const res = await getAllTickets();
-        setTickets(res.data.tickets);
+        const safeTickets = res.data.tickets.filter(
+          (t: Ticket) =>
+            typeof t.ticket_id === "string" &&
+            typeof t.client_message === "string"
+        );
+        setTickets(safeTickets);
       } catch (error) {
         console.error("Failed to fetch tickets:", error);
       }

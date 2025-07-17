@@ -209,6 +209,8 @@ const SocialSetup: React.FC = () => {
       const profileData = (user?.[dataKey] as any[]) ?? [];
 
       const aiPersona = await generatePersona(platform, username, profileData);
+      console.log("AI Persona generated:", aiPersona);
+      localStorage.setItem("aiPersona", JSON.stringify(aiPersona));
 
       updateUser({
         socialHandles: handles,

@@ -33,6 +33,8 @@ export interface SessionPayload {
   userId: string;
   sessionId?: string;
   question: string;
+  aiPersona?: string;
+  persona:string;
 }
 
 export interface EndSessionPayload {
@@ -64,6 +66,11 @@ export interface Ticket {
   assigned_concierge: string | null;
   estimated_completion: string | null;
   smart_suggestions: string;
+}
+
+interface UpdateTicketPayload {
+  priority?: "low" | "medium" | "high";
+  status?: "pending" | "in_progress" | "completed";
 }
 
 export interface GoogleSignInPayload {
@@ -149,6 +156,12 @@ export const endSession = (sessionId: string, data: EndSessionPayload) =>
 
 // Tickets
 export const getAllTickets = () => api.get<{ tickets: Ticket[] }>("/tickets");
+
+export const updateTicket = (ticketId: string, data: UpdateTicketPayload) =>
+  api.patch<{ success: boolean }>(`/tickets/${ticketId}`, data);
+
+export const replaceTicket = (ticketId: string, data: Partial<Ticket>) =>
+  api.put<{ success: boolean }>(`/tickets/${ticketId}`, data);
 
 // Auth Token Handling
 export const setAuthToken = (token: string | null) => {

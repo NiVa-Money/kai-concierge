@@ -223,6 +223,7 @@ const ChatTab: React.FC = () => {
   const { user } = useAuth();
 
   const userId = localStorage.getItem("userId");
+  const aiPersona = JSON.parse(localStorage.getItem("aiPersona") || "{}");
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -253,6 +254,7 @@ const ChatTab: React.FC = () => {
         userId,
         sessionId: sessionId ?? undefined,
         question: input,
+        persona: JSON.stringify(aiPersona),
       });
 
       const agentMsg = {
