@@ -218,7 +218,7 @@
 
 import React, { useEffect, useState } from "react";
 import { X, Calendar, Phone, Mail, User } from "lucide-react";
-import { replaceTicket, updateTicket, Ticket } from "../../api";
+import { updateTicket, Ticket } from "../../api";
 
 type Props = {
   ticket: Ticket | null;
@@ -256,7 +256,26 @@ const TicketDetailsModal: React.FC<Props> = ({ ticket, onClose }) => {
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      await replaceTicket(ticket._id, ticketData);
+
+      const payload = {
+        status: ticketData.status as "pending" | "in_progress" | "completed",
+        priority: ticketData.priority as "low" | "medium" | "high",
+        client_message: ticketData.client_message ?? "",
+        timeline: ticketData.timeline ?? "",
+        estimated_budget: ticketData.estimated_budget ?? "",
+        special_instructions: ticketData.special_instructions ?? "",
+        assigned_concierge: ticketData.assigned_concierge ?? "",
+        client_contact: {
+          name: ticketData.client_contact.name ?? "",
+          phone: ticketData.client_contact.phone ?? "",
+          email: ticketData.client_contact.email ?? "",
+        },
+        estimated_completion: ticketData.estimated_completion
+          ? new Date(ticketData.estimated_completion).toISOString()
+          : undefined,
+      };
+
+      await updateTicket(ticket._id, payload);
       setEditMode(false);
     } catch (error) {
       console.error("Failed to update ticket:", error);

@@ -68,10 +68,23 @@ export interface Ticket {
   smart_suggestions: string;
 }
 
-interface UpdateTicketPayload {
-  priority?: "low" | "medium" | "high";
+export interface UpdateTicketPayload {
   status?: "pending" | "in_progress" | "completed";
+  priority?: "low" | "medium" | "high";
+  client_message?: string;
+  timeline?: string;
+  estimated_budget?: string;
+  special_instructions?: string;
+  assigned_concierge?: string;
+  client_contact?: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
+  estimated_completion?: string; // ISO string or null
 }
+
+
 
 export interface GoogleSignInPayload {
   name: string;
@@ -159,9 +172,6 @@ export const getAllTickets = () => api.get<{ tickets: Ticket[] }>("/tickets");
 
 export const updateTicket = (ticketId: string, data: UpdateTicketPayload) =>
   api.patch<{ success: boolean }>(`/tickets/${ticketId}`, data);
-
-export const replaceTicket = (ticketId: string, data: Partial<Ticket>) =>
-  api.put<{ success: boolean }>(`/tickets/${ticketId}`, data);
 
 // Auth Token Handling
 export const setAuthToken = (token: string | null) => {
