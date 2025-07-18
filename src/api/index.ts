@@ -47,6 +47,7 @@ export interface UserResponse {
   age: number;
   email: string;
   userId: string;
+  user_id: string;
 }
 
 export interface Ticket {
@@ -104,7 +105,7 @@ export interface GoogleSignInPayload {
 
 export interface GoogleSignInResponse {
   type: "login" | "signup";
-  userId: string;
+  user_id: string;
 }
 
 // =======================
@@ -116,7 +117,10 @@ export const signup = (data: SignupPayload) =>
   api.post<{ data: { user_id: string } }>("/api/v1/users/signup", data);
 
 export const login = (data: LoginPayload) =>
-  api.post<{ data: { user_id: string } }>("/api/v1/users/login", data);
+  api.post<{
+    user_id: any;
+    data: { user_id: string };
+  }>("/api/v1/users/login", data);
 
 export const signInWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
@@ -137,9 +141,9 @@ export const googleSignin = (data: GoogleSignInPayload) =>
 
 export const handleGoogleAuth = async (): Promise<{
   type: "login" | "signup";
-  userId: string;
   name: string;
   email: string;
+  user_id: string;
 }> => {
   try {
     const firebaseUser = await signInWithGoogle();
@@ -157,7 +161,7 @@ export const handleGoogleAuth = async (): Promise<{
 
     return {
       type: response.data.data.type,
-      userId: response.data.data.userId,
+      user_id: response.data.data.user_id,
       name: firebaseUser.displayName,
       email: firebaseUser.email,
     };

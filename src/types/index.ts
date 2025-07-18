@@ -2,10 +2,10 @@ import { PersonaResponse } from "../api/persona";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface User {
-  userId?: string;
+  user_id: string;
   id?: string;
   name?: string;
-  age?: number | null; 
+  age?: number | null;
   email?: string;
   avatar?: string;
   socialHandles?: {

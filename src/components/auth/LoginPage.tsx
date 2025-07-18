@@ -18,10 +18,10 @@ const LoginPage: React.FC = () => {
     try {
       const result = await handleGoogleAuth();
 
-      const { userId, name, email } = result;
-      localStorage.setItem("userId", userId);
-
-      updateUser({ userId, name, email }); // Now has actual user info
+      const { user_id, name, email } = result;
+      localStorage.setItem("userId", user_id);
+      updateUser({ user_id, name, email });
+      // Now has actual user info
 
       navigate("/social-setup");
     } catch (err: any) {
@@ -35,12 +35,13 @@ const LoginPage: React.FC = () => {
     setError("");
     try {
       const response = await login({ email, password });
-      const userId = response.data.userId;
+      const userId = response.data.data.user_id;
       localStorage.setItem("userId", userId);
+      updateUser({ user_id: userId, email });
 
       // Fetch complete user profile
       const profile = await getUserInfo(userId);
-      updateUser(profile.data); // now matches Partial<User>
+      updateUser(profile.data.data); // now matches Partial<User>
 
       navigate("/social-setup");
     } catch (err: any) {
