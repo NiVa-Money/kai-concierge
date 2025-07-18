@@ -4,7 +4,7 @@ import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../contexts/firebaseConfig";
 
 // Base Axios instance
-const API_BASE_URL = "http://localhost:5003";
+const API_BASE_URL = "http://localhost:5002";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -179,11 +179,16 @@ export const endSession = (sessionId: string, data: EndSessionPayload) =>
   api.post(`/api/v1/sessions/${sessionId}/end/`, data);
 
 // Tickets
-export const getAllTickets = () => 
-  api.get<{ success: boolean; message: string; data: { tickets: Ticket[] } }>("/api/v1/tickets/");
+export const getAllTickets = () =>
+  api.get<{ success: boolean; message: string; data: { tickets: Ticket[] } }>(
+    "/api/v1/tickets/"
+  );
 
 export const updateTicket = (ticketId: string, data: UpdateTicketPayload) =>
-  api.put<{ data: { ticket_id: string } }>(`/api/v1/tickets/${ticketId}/`, data);
+  api.put<{ data: { ticket_id: string } }>(
+    `/api/v1/tickets/${ticketId}/`,
+    data
+  );
 
 export const getTicket = (ticketId: string) =>
   api.get<{ data: Ticket }>(`/api/v1/tickets/${ticketId}/`);
@@ -195,20 +200,23 @@ export const deleteTicket = (ticketId: string) =>
   api.delete<{ data: { ticket_id: string } }>(`/api/v1/tickets/${ticketId}/`);
 
 export const getTicketProgress = (ticketId: string) =>
-  api.get<{ data: { progress: any[] } }>(`/api/v1/tickets/${ticketId}/progress`);
+  api.get<{ data: { progress: any[] } }>(
+    `/api/v1/tickets/${ticketId}/progress`
+  );
 
 export const addTicketProgress = (ticketId: string, progressData: any) =>
-  api.patch<{ data: { ticket_id: string } }>(`/api/v1/tickets/${ticketId}/progress`, progressData);
+  api.patch<{ data: { ticket_id: string } }>(
+    `/api/v1/tickets/${ticketId}/progress`,
+    progressData
+  );
 
 export const getSmartSuggestions = (ticketId: string) =>
   api.get<{ data: any }>(`/api/v1/tickets/${ticketId}/smart-suggestions`);
 
 // API Documentation
-export const getApiInfo = () =>
-  api.get<{ data: any }>("/api/v1/docs/");
+export const getApiInfo = () => api.get<{ data: any }>("/api/v1/docs/");
 
-export const getApiHealth = () =>
-  api.get<{ data: any }>("/api/v1/docs/health");
+export const getApiHealth = () => api.get<{ data: any }>("/api/v1/docs/health");
 
 // Auth Token Handling
 export const setAuthToken = (token: string | null) => {
