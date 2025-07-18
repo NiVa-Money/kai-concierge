@@ -27,12 +27,22 @@ const OpsDashboard: React.FC = () => {
   const fetchTickets = async () => {
     try {
       const res = await getAllTickets();
-      const safeTickets = res.data.tickets.filter(
-        (t: Ticket) =>
-          typeof t.ticket_id === "string" &&
-          typeof t.client_message === "string"
-      );
-      setTickets(safeTickets);
+      
+      // Check if the response has the expected structure
+      if (res.data && res.data.data && res.data.data.tickets) {
+        const tickets = res.data.data.tickets;
+        
+        const safeTickets = tickets.filter(
+          (t: Ticket) => {
+            return typeof t.ticket_id === "string" &&
+                   typeof t.client_message === "string";
+          }
+        );
+        setTickets(safeTickets);
+      } else {
+        console.error("Unexpected API response structure:", res.data);
+        setTickets([]);
+      }
     } catch (error) {
       console.error("Failed to fetch tickets:", error);
     }
@@ -78,6 +88,37 @@ const OpsDashboard: React.FC = () => {
       default:
         return "text-gray-400";
     }
+  };
+
+  const calculateProgress = (ticket: Ticket) => {
+    // Use dynamic stages from ticket if available
+    if (ticket.stages && ticket.stages.length > 0) {
+      const completedStages = ticket.stages.filter((stage: { status: string }) => stage.status === "completed").length;
+      const totalStages = ticket.stages.length;
+      
+      // Calculate progress based on completed stages
+      const progressPercentage = (completedStages / totalStages) * 100;
+      
+      return Math.min(progressPercentage, 100);
+    }
+    
+    // Fallback to old logic for tickets without stages
+    const currentStage = ticket.current_stage || "created";
+    const allStages = ["created", "assigned", "research", "execution", "completed"];
+    const currentIndex = allStages.indexOf(currentStage);
+    
+    // Calculate progress percentage
+    const progressPercentage = ((currentIndex + 1) / allStages.length) * 100;
+    
+    return Math.min(progressPercentage, 100);
+  };
+
+  const getCurrentStageName = (ticket: Ticket) => {
+    if (ticket.stages && ticket.stages.length > 0) {
+      const currentStage = ticket.stages.find((stage: { stageId: string }) => stage.stageId === ticket.currentStage);
+      return currentStage?.name || "Initial Stage";
+    }
+    return "Ticket Created";
   };
 
   const statusCounts = {
@@ -239,6 +280,27 @@ const OpsDashboard: React.FC = () => {
                 </div>
               </div>
 
+              {/* Progress Bar */}
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-slate-400">Progress</span>
+                  <span className="text-xs text-green-400 font-medium">
+                    {Math.round(calculateProgress(ticket))}%
+                  </span>
+                </div>
+                <div className="w-full bg-slate-700 rounded-full h-1.5">
+                  <div 
+                    className="bg-gradient-to-r from-green-400 to-green-500 h-1.5 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${calculateProgress(ticket)}%` }}
+                  ></div>
+                </div>
+                <div className="mt-1">
+                  <span className="text-xs text-slate-500">
+                    {getCurrentStageName(ticket)}
+                  </span>
+                </div>
+              </div>
+
               <p className="text-slate-400 text-sm mb-2 line-clamp-2">
                 {ticket.client_message}
               </p>
@@ -246,12 +308,14 @@ const OpsDashboard: React.FC = () => {
               <div className="text-xs text-slate-400 mb-2">
                 <div className="flex items-center space-x-2">
                   <User className="w-3 h-3" />
-                  <span>{ticket.client_contact.name}</span>
+                  <span>{ticket.client_contact.name || 'Unknown'}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Phone className="w-3 h-3" />
-                  <span>{ticket.client_contact.phone}</span>
-                </div>
+                {ticket.client_contact.phone && (
+                  <div className="flex items-center space-x-2">
+                    <Phone className="w-3 h-3" />
+                    <span>{ticket.client_contact.phone}</span>
+                  </div>
+                )}
                 {ticket.client_contact.email && (
                   <div className="flex items-center space-x-2">
                     <Mail className="w-3 h-3" />

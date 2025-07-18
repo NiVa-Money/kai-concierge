@@ -4,7 +4,7 @@ import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../contexts/firebaseConfig";
 
 // Base Axios instance
-const API_BASE_URL = "http://localhost:5001";
+const API_BASE_URL = "http://localhost:5003";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -58,14 +58,31 @@ export interface Ticket {
   priority: string;
   status: string;
   created_at: string;
-  session_chat: string;
-  client_preferences: Record<string, any>;
-  estimated_budget: string;
-  timeline: string;
-  special_instructions: string;
-  assigned_concierge: string | null;
-  estimated_completion: string | null;
-  smart_suggestions: string;
+  session_chat?: string;
+  client_preferences?: Record<string, any>;
+  estimated_budget?: string;
+  timeline?: string;
+  special_instructions?: string;
+  assigned_concierge?: string | null;
+  estimated_completion?: string | null;
+  smart_suggestions?: string;
+  progress?: Array<{
+    stage: string;
+    timestamp: string;
+    meta: Record<string, any>;
+  }>;
+  current_stage?: string;
+  currentStage?: string;
+  stages?: Array<{
+    stageId: string;
+    name: string;
+    description: string;
+    order: number;
+    status: string;
+    estimated_duration: string;
+    dependencies: string[];
+  }>;
+  totalStages?: number;
 }
 
 export interface UpdateTicketPayload {
@@ -96,10 +113,10 @@ export interface GoogleSignInResponse {
 
 // Auth
 export const signup = (data: SignupPayload) =>
-  api.post<{ userId: string }>("/signup", data);
+  api.post<{ data: { user_id: string } }>("/api/v1/users/signup", data);
 
 export const login = (data: LoginPayload) =>
-  api.post<{ userId: string }>("/login", data);
+  api.post<{ data: { user_id: string } }>("/api/v1/users/login", data);
 
 export const signInWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
@@ -116,7 +133,7 @@ export const signInWithGoogle = async () => {
 };
 
 export const googleSignin = (data: GoogleSignInPayload) =>
-  api.post<GoogleSignInResponse>("/google-signin", data);
+  api.post<{ data: GoogleSignInResponse }>("/api/v1/users/google-signin", data);
 
 export const handleGoogleAuth = async (): Promise<{
   type: "login" | "signup";
@@ -139,8 +156,8 @@ export const handleGoogleAuth = async (): Promise<{
     const response = await googleSignin(payload);
 
     return {
-      type: response.data.type,
-      userId: response.data.userId,
+      type: response.data.data.type,
+      userId: response.data.data.userId,
       name: firebaseUser.displayName,
       email: firebaseUser.email,
     };
@@ -152,20 +169,46 @@ export const handleGoogleAuth = async (): Promise<{
 
 // User
 export const getUserInfo = (userId: string) =>
-  api.get<UserResponse>(`/user/${userId}`);
+  api.get<{ data: UserResponse }>(`/api/v1/users/${userId}/`);
 
 // Session
 export const createOrUpdateSession = (data: SessionPayload) =>
-  api.post("/session", data);
+  api.post("/api/v1/sessions/", data);
 
 export const endSession = (sessionId: string, data: EndSessionPayload) =>
-  api.post(`/session/${sessionId}/end`, data);
+  api.post(`/api/v1/sessions/${sessionId}/end/`, data);
 
 // Tickets
-export const getAllTickets = () => api.get<{ tickets: Ticket[] }>("/tickets");
+export const getAllTickets = () => 
+  api.get<{ success: boolean; message: string; data: { tickets: Ticket[] } }>("/api/v1/tickets/");
 
 export const updateTicket = (ticketId: string, data: UpdateTicketPayload) =>
-  api.patch<{ success: boolean }>(`/tickets/${ticketId}`, data);
+  api.put<{ data: { ticket_id: string } }>(`/api/v1/tickets/${ticketId}/`, data);
+
+export const getTicket = (ticketId: string) =>
+  api.get<{ data: Ticket }>(`/api/v1/tickets/${ticketId}/`);
+
+export const createTicket = (ticketData: any) =>
+  api.post<{ data: { ticket_id: string } }>("/api/v1/tickets/", ticketData);
+
+export const deleteTicket = (ticketId: string) =>
+  api.delete<{ data: { ticket_id: string } }>(`/api/v1/tickets/${ticketId}/`);
+
+export const getTicketProgress = (ticketId: string) =>
+  api.get<{ data: { progress: any[] } }>(`/api/v1/tickets/${ticketId}/progress`);
+
+export const addTicketProgress = (ticketId: string, progressData: any) =>
+  api.patch<{ data: { ticket_id: string } }>(`/api/v1/tickets/${ticketId}/progress`, progressData);
+
+export const getSmartSuggestions = (ticketId: string) =>
+  api.get<{ data: any }>(`/api/v1/tickets/${ticketId}/smart-suggestions`);
+
+// API Documentation
+export const getApiInfo = () =>
+  api.get<{ data: any }>("/api/v1/docs/");
+
+export const getApiHealth = () =>
+  api.get<{ data: any }>("/api/v1/docs/health");
 
 // Auth Token Handling
 export const setAuthToken = (token: string | null) => {
