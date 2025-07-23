@@ -78,14 +78,16 @@ const ProfileTab: React.FC = () => {
     fetchDashboard();
   }, [user, updateUser]);
 
-  const stats = dashboard?.stats || {
-    totalRequests: 0,
-    completedRequests: 0,
-    avgResponse: "-",
-    satisfaction: "-",
+  const stats = {
+    totalRequests: dashboard?.stats?.totalRequests ?? 0,
+    completedRequests: dashboard?.stats?.completedRequests ?? 0,
+    avgResponse: dashboard?.stats?.avgResponse ?? 0,
+    satisfaction: dashboard?.stats?.satisfaction ?? 0,
   };
 
-  const recentActivity = dashboard?.recentActivity || [];
+  const recentActivity = dashboard?.recentActivity?.length
+    ? dashboard.recentActivity
+    : [{ action: "No recent activity", time: "" }];
 
   const handleUpdateUser = async () => {
     const userId = localStorage.getItem("userId");
@@ -308,28 +310,20 @@ const ProfileTab: React.FC = () => {
           </h3>
 
           <div className="space-y-3">
-            {recentActivity.length > 0 ? (
-              recentActivity.map((activity: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-lg text-slate-400">•</span>
-                    <span className="text-white">
-                      {activity.action || "No action"}
-                    </span>
-                  </div>
-                  <span className="text-slate-400 text-sm">
-                    {activity.time || "-"}
-                  </span>
+            {recentActivity.map((activity: any, idx: number) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="text-lg text-slate-400">•</span>
+                  <span className="text-white">{activity.action}</span>
                 </div>
-              ))
-            ) : (
-              <p className="text-slate-400 text-sm text-center py-4">
-                No recent activity
-              </p>
-            )}
+                <span className="text-slate-400 text-sm">
+                  {activity.time || "-"}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
