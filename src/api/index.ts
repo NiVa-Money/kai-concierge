@@ -49,7 +49,6 @@ export interface UserResponse {
   name: string;
   age: number;
   email: string;
-  userId: string;
   user_id: string;
 }
 
@@ -174,10 +173,6 @@ export const handleGoogleAuth = async (): Promise<{
   }
 };
 
-// User
-export const getUserInfo = (userId: string) =>
-  api.get<{ data: UserResponse }>(`/api/v1/users/${userId}/`);
-
 // Session
 export const createOrUpdateSession = (data: SessionPayload) =>
   api.post("/api/v1/sessions/", data);
@@ -233,3 +228,18 @@ export const setAuthToken = (token: string | null) => {
     delete api.defaults.headers.common["Authorization"];
   }
 };
+
+// Profile APIs
+export const getUserInfo = (userId: string) =>
+  api.get<{ data: UserResponse }>(`/api/v1/users/${userId}/`);
+
+export const updateUserById = (
+  userId: string,
+  updatedData: Partial<UserResponse>
+) => api.put<{ data: UserResponse }>(`/api/v1/users/${userId}`, updatedData);
+
+export const deleteUserById = (userId: string) =>
+  api.delete<{ success: boolean }>(`/api/v1/users/${userId}`);
+
+export const getUserDashboard = (userId: string) =>
+  api.get<{ data: any }>(`/api/v1/users/${userId}/dashboard`);

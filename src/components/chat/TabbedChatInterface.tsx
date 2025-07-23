@@ -1,23 +1,23 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { Menu, X } from 'lucide-react';
-import TabNavigation from '../ui/TabNavigation';
-import PredictiveTab from '../tabs/PredictiveTab';
-import ChatTab from '../tabs/ChatTab';
-import ProfileTab from '../tabs/ProfileTab';
+import React, { useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { Menu, X } from "lucide-react";
+import TabNavigation from "../ui/TabNavigation";
+import PredictiveTab from "../tabs/PredictiveTab";
+import ChatTab from "../tabs/ChatTab";
+import ProfileTab from "../tabs/ProfileTab";
 
 const TabbedChatInterface: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('predictive');
+  const [activeTab, setActiveTab] = useState("predictive");
   const [showSidebar, setShowSidebar] = useState(false);
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'predictive':
+      case "predictive":
         return <PredictiveTab />;
-      case 'chat':
+      case "chat":
         return <ChatTab />;
-      case 'profile':
+      case "profile":
         return <ProfileTab />;
       default:
         return <PredictiveTab />;
@@ -38,9 +38,9 @@ const TabbedChatInterface: React.FC = () => {
 
         {/* Desktop Tab Navigation */}
         <div className="flex-1 p-4">
-          <TabNavigation 
-            activeTab={activeTab} 
-            onTabChange={setActiveTab} 
+          <TabNavigation
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
             layout="sidebar"
           />
         </div>
@@ -48,13 +48,10 @@ const TabbedChatInterface: React.FC = () => {
         {/* User Profile in Sidebar */}
         <div className="p-4 border-t border-slate-700">
           <div className="flex items-center space-x-3">
-            <img
-              src={user?.avatar}
-              alt={user?.name}
-              className="w-10 h-10 rounded-full border border-slate-600"
-            />
             <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium truncate">{user?.name}</p>
+              <p className="text-white text-sm font-medium truncate">
+                {user?.name}
+              </p>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 <span className="text-xs text-slate-400">Always available</span>
@@ -101,9 +98,9 @@ const TabbedChatInterface: React.FC = () => {
 
         {/* Mobile Bottom Tab Navigation */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-800/95 backdrop-blur-lg border-t border-slate-700">
-          <TabNavigation 
-            activeTab={activeTab} 
-            onTabChange={setActiveTab} 
+          <TabNavigation
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
             layout="bottom"
           />
         </div>
@@ -127,14 +124,14 @@ const TabbedChatInterface: React.FC = () => {
               </div>
               <p className="text-slate-400 text-sm">Ultra-premium concierge</p>
             </div>
-            
+
             <div className="p-4">
-              <TabNavigation 
-                activeTab={activeTab} 
+              <TabNavigation
+                activeTab={activeTab}
                 onTabChange={(tab) => {
                   setActiveTab(tab);
                   setShowSidebar(false);
-                }} 
+                }}
                 layout="sidebar"
               />
             </div>
@@ -147,10 +144,14 @@ const TabbedChatInterface: React.FC = () => {
                   className="w-10 h-10 rounded-full border border-slate-600"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">{user?.name}</p>
+                  <p className="text-white text-sm font-medium truncate">
+                    {user?.name}
+                  </p>
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-xs text-slate-400">Always available</span>
+                    <span className="text-xs text-slate-400">
+                      Always available
+                    </span>
                   </div>
                 </div>
               </div>
