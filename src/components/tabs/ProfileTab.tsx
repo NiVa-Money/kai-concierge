@@ -65,6 +65,7 @@ const ProfileTab: React.FC = () => {
         if (userId) {
           const response = await getUserDashboard(userId);
           setDashboard(response.data);
+          console.log(response.data);
         }
       } catch (err) {
         console.error("Failed to fetch dashboard:", err);
@@ -79,10 +80,10 @@ const ProfileTab: React.FC = () => {
   }, [user, updateUser]);
 
   const stats = {
-    totalRequests: dashboard?.stats?.totalRequests ?? 0,
-    completedRequests: dashboard?.stats?.completedRequests ?? 0,
-    avgResponse: dashboard?.stats?.avgResponse ?? 0,
-    satisfaction: dashboard?.stats?.satisfaction ?? 0,
+    totalRequests: dashboard?.data?.total_requests ?? 0,
+    completedRequests: dashboard?.data?.completed_requests ?? 0,
+    avgResponse: dashboard?.data?.avg_response ?? 0,
+    satisfaction: dashboard?.data?.satisfaction ?? 0,
   };
 
   const handleUpdateUser = async () => {
@@ -165,7 +166,7 @@ const ProfileTab: React.FC = () => {
               </h2>
               <p className="text-slate-400 mb-1">{user?.email}</p>
               <p className="text-slate-400 mb-1">
-                Phone: {dashboard?.profile?.phone || "-"}
+                Phone: {dashboard?.data?.profile?.phone || "-"}
               </p>
 
               {user?.age && (
