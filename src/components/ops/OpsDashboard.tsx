@@ -308,15 +308,15 @@ const OpsDashboard: React.FC = () => {
               <div className="text-xs text-slate-400 mb-2">
                 <div className="flex items-center space-x-2">
                   <User className="w-3 h-3" />
-                  <span>{ticket.client_contact.name || 'Unknown'}</span>
+                  <span>{ticket.client_contact?.name || 'Unknown'}</span>
                 </div>
-                {ticket.client_contact.phone && (
+                {ticket.client_contact?.phone && (
                   <div className="flex items-center space-x-2">
                     <Phone className="w-3 h-3" />
                     <span>{ticket.client_contact.phone}</span>
                   </div>
                 )}
-                {ticket.client_contact.email && (
+                {ticket.client_contact?.email && (
                   <div className="flex items-center space-x-2">
                     <Mail className="w-3 h-3" />
                     <span>{ticket.client_contact.email}</span>
