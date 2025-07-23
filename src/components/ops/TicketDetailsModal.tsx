@@ -461,9 +461,9 @@ const TicketDetailsModal: React.FC<Props> = ({ ticket, onClose, onUpdate }) => {
             <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-slate-400">
               <User className="w-4 h-4" />
-              <span className="text-white">{ticketData.client_contact.name || 'Unknown'}</span>
+              <span className="text-white">{ticketData.client_contact?.name || 'Unknown'}</span>
             </div>
-            {ticketData.client_contact.phone && (
+            {ticketData.client_contact?.phone && (
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <Phone className="w-4 h-4" />
                 <a 
@@ -474,7 +474,7 @@ const TicketDetailsModal: React.FC<Props> = ({ ticket, onClose, onUpdate }) => {
                 </a>
               </div>
             )}
-            {ticketData.client_contact.email && (
+            {ticketData.client_contact?.email && (
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <Mail className="w-4 h-4" />
                 <a 
