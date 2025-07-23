@@ -85,10 +85,6 @@ const ProfileTab: React.FC = () => {
     satisfaction: dashboard?.stats?.satisfaction ?? 0,
   };
 
-  const recentActivity = dashboard?.recentActivity?.length
-    ? dashboard.recentActivity
-    : [{ action: "No recent activity", time: "" }];
-
   const handleUpdateUser = async () => {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
@@ -310,20 +306,27 @@ const ProfileTab: React.FC = () => {
           </h3>
 
           <div className="space-y-3">
-            {recentActivity.map((activity: any, idx: number) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg text-slate-400">•</span>
-                  <span className="text-white">{activity.action}</span>
+            {(dashboard?.data?.recent_activity || []).map(
+              (activity: any, idx: number) => (
+                <div
+                  key={activity._id || idx}
+                  className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-white font-medium">
+                      {activity.client_message || "Unknown Service"}
+                    </span>
+                    <span className="text-slate-400 text-sm">
+                      Ticket: {activity.ticket_id || "-"} | Status:{" "}
+                      {activity.status || "N/A"}
+                    </span>
+                  </div>
+                  <span className="text-slate-400 text-sm">
+                    {new Date(activity.created_at).toLocaleString()}
+                  </span>
                 </div>
-                <span className="text-slate-400 text-sm">
-                  {activity.time || "-"}
-                </span>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
 

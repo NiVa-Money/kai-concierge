@@ -44,21 +44,6 @@ const TabbedChatInterface: React.FC = () => {
             layout="sidebar"
           />
         </div>
-
-        {/* User Profile in Sidebar */}
-        <div className="p-4 border-t border-slate-700">
-          <div className="flex items-center space-x-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium truncate">
-                {user?.name}
-              </p>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-xs text-slate-400">Always available</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Main Content Area */}

@@ -236,6 +236,7 @@ const ChatInterface: React.FC = () => {
         userId,
         sessionId: sessionId ?? undefined,
         question,
+        persona: ""
       });
 
       const agentMsg = {
