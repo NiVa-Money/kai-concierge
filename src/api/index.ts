@@ -22,7 +22,7 @@ const api = axios.create({
 export interface SignupPayload {
   name: string;
   age?: number;
-  phoneNumber?: number;
+  phone?: string; 
   email: string;
   password: string;
 }

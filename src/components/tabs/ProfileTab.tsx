@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -5,7 +6,7 @@ import { useChat } from "../../contexts/ChatContext";
 import {
   deleteUserById,
   getUserDashboard,
-  getUserInfo,
+  // getUserInfo,
   updateUserById,
   UserResponse,
 } from "../../api";
@@ -34,6 +35,8 @@ const ProfileTab: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState<Partial<UserResponse>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const maleAvatar =
     "https://static.vecteezy.com/system/resources/previews/024/183/525/non_2x/avatar-of-a-man-portrait-of-a-young-guy-illustration-of-male-character-in-modern-color-style-vector.jpg";
@@ -46,18 +49,18 @@ const ProfileTab: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const storedId = localStorage.getItem("userId");
-        if (storedId && (!user || !user.name || !user.email)) {
-          const response = await getUserInfo(storedId);
-          updateUser(response.data.data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch user info:", err);
-        setError("Unable to load user information.");
-      }
-    };
+    // const fetchUserData = async () => {
+    //   try {
+    //     const storedId = localStorage.getItem("userId");
+    //     if (storedId && (!user || !user.name || !user.email)) {
+    //       const response = await getUserInfo(storedId);
+    //       updateUser(response.data.data);
+    //     }
+    //   } catch (err) {
+    //     console.error("Failed to fetch user info:", err);
+    //     setError("Unable to load user information.");
+    //   }
+    // };
 
     const fetchDashboard = async () => {
       try {
@@ -75,9 +78,9 @@ const ProfileTab: React.FC = () => {
       }
     };
 
-    fetchUserData();
+    // fetchUserData();
     fetchDashboard();
-  }, [user, updateUser]);
+  }, []);
 
   const stats = {
     totalRequests: dashboard?.data?.total_requests ?? 0,
@@ -162,27 +165,20 @@ const ProfileTab: React.FC = () => {
             />
             <div className="flex-1">
               <h2 className="text-2xl font-light text-white mb-1">
-                {user?.name}
+                {dashboard?.data?.profile?.name || "-"}
               </h2>
-              <p className="text-slate-400 mb-1">{user?.email}</p>
+              <p className="text-slate-400 mb-1">
+                {dashboard?.data?.profile?.email || "-"}
+              </p>
               <p className="text-slate-400 mb-1">
                 Phone: {dashboard?.data?.profile?.phone || "-"}
               </p>
 
-              {user?.age && (
-                <p className="text-slate-500 text-sm mb-1">Age: {user.age}</p>
+              {dashboard?.data?.profile?.age && (
+                <p className="text-slate-500 text-sm mb-1">
+                  Age: {dashboard.data.profile.age}
+                </p>
               )}
-
-              <div className="flex flex-wrap gap-2 mt-2">
-                {user?.persona?.preferences?.map((pref, index) => (
-                  <span
-                    key={index}
-                    className="bg-amber-400/20 text-amber-400 px-3 py-1 rounded-full text-sm"
-                  >
-                    {pref}
-                  </span>
-                ))}
-              </div>
             </div>
 
             <div className="flex space-x-2">
@@ -193,13 +189,14 @@ const ProfileTab: React.FC = () => {
                 <Edit className="w-5 h-5 text-slate-400" />
               </button>
               <button
-                onClick={handleDeleteUser}
+                onClick={() => setShowDeleteConfirm(true)}
                 className="p-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors text-white"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
+
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="p-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors"
               >
                 <LogOut className="w-5 h-5 text-red-400" />
@@ -307,29 +304,88 @@ const ProfileTab: React.FC = () => {
           </h3>
 
           <div className="space-y-3">
-            {(dashboard?.data?.recent_activity || []).map(
-              (activity: any, idx: number) => (
-                <div
-                  key={activity._id || idx}
-                  className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors"
-                >
-                  <div className="flex flex-col">
-                    <span className="text-white font-medium">
-                      {activity.client_message || "Unknown Service"}
-                    </span>
+            {dashboard?.data?.recent_activity?.length > 0 ? (
+              dashboard.data.recent_activity.map(
+                (activity: any, idx: number) => (
+                  <div
+                    key={activity._id || idx}
+                    className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-white font-medium">
+                        {activity.client_message || "Unknown Service"}
+                      </span>
+                      <span className="text-slate-400 text-sm">
+                        Ticket: {activity.ticket_id || "-"} | Status:{" "}
+                        {activity.status || "N/A"}
+                      </span>
+                    </div>
                     <span className="text-slate-400 text-sm">
-                      Ticket: {activity.ticket_id || "-"} | Status:{" "}
-                      {activity.status || "N/A"}
+                      {new Date(activity.created_at).toLocaleString()}
                     </span>
                   </div>
-                  <span className="text-slate-400 text-sm">
-                    {new Date(activity.created_at).toLocaleString()}
-                  </span>
-                </div>
+                )
               )
+            ) : (
+              <p className="text-slate-400 text-sm text-center py-4">
+                No recent activity
+              </p>
             )}
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
+            <div className="bg-slate-800 rounded-lg p-6 w-96">
+              <h2 className="text-lg text-white mb-4">Delete Account?</h2>
+              <p className="text-slate-300 mb-4">
+                Are you sure you want to delete your account? This action cannot
+                be undone.
+              </p>
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-3 py-2 bg-slate-600 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteUser}
+                  className="px-3 py-2 bg-red-500 text-white rounded"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Logout Confirmation Modal */}
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
+            <div className="bg-slate-800 rounded-lg p-6 w-96">
+              <h2 className="text-lg text-white mb-4">Logout?</h2>
+              <p className="text-slate-300 mb-4">
+                Are you sure you want to log out of your account?
+              </p>
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="px-3 py-2 bg-slate-600 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-2 bg-red-500 text-white rounded"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Edit Modal */}
         {showEditModal && (
@@ -339,21 +395,39 @@ const ProfileTab: React.FC = () => {
               <input
                 type="text"
                 placeholder="Name"
-                defaultValue={user?.name}
+                defaultValue={dashboard?.data?.profile?.name || ""}
                 onChange={(e) =>
                   setEditForm((prev) => ({ ...prev, name: e.target.value }))
                 }
                 className="w-full p-2 mb-3 rounded bg-slate-700 text-white"
               />
               <input
+                type="text"
+                placeholder="Email"
+                defaultValue={dashboard?.data?.profile?.email || ""}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, email: e.target.value }))
+                }
+                className="w-full p-2 mb-3 rounded bg-slate-700 text-white"
+              />
+              <input
                 type="number"
                 placeholder="Age"
-                value={editForm.age ?? user?.age ?? ""}
+                defaultValue={dashboard?.data?.profile?.age || ""}
                 onChange={(e) =>
                   setEditForm((prev) => ({
                     ...prev,
                     age: Number(e.target.value),
                   }))
+                }
+                className="w-full p-2 mb-3 rounded bg-slate-700 text-white"
+              />
+              <input
+                type="text"
+                placeholder="Phone Number"
+                defaultValue={dashboard?.data?.profile?.phone || ""}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, phone: e.target.value }))
                 }
                 className="w-full p-2 mb-3 rounded bg-slate-700 text-white"
               />

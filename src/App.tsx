@@ -51,7 +51,6 @@ import SocialSetup from "./components/auth/SocialSetup";
 import TabbedChatInterface from "./components/chat/TabbedChatInterface";
 import OpsDashboard from "./components/ops/OpsDashboard";
 import SignupPage from "./components/auth/SignupPage";
-import ChatTab from "./components/tabs/ChatTab";
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -84,7 +83,7 @@ const AppContent: React.FC = () => {
             }
           />
           <Route path="/ops" element={<OpsDashboard />} />
-          <Route path="/chat" element={<ChatTab />} />
+          <Route path="/chat" element={<TabbedChatInterface />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
       ) : (

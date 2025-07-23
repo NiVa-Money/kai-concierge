@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useAuth } from "../../contexts/AuthContext";
 import { Menu, X } from "lucide-react";
 import TabNavigation from "../ui/TabNavigation";
 import PredictiveTab from "../tabs/PredictiveTab";
@@ -7,8 +6,10 @@ import ChatTab from "../tabs/ChatTab";
 import ProfileTab from "../tabs/ProfileTab";
 
 const TabbedChatInterface: React.FC = () => {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("predictive");
+  const [activeTab, setActiveTab] = useState(() => {
+    return window.location.pathname === "/chat" ? "chat" : "predictive";
+  });
+
   const [showSidebar, setShowSidebar] = useState(false);
 
   const renderTabContent = () => {
@@ -62,17 +63,6 @@ const TabbedChatInterface: React.FC = () => {
                 kai<span className="text-amber-400">°</span>
               </h1>
             </div>
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-sm text-slate-400">Live</span>
-              </div>
-              <img
-                src={user?.avatar}
-                alt={user?.name}
-                className="w-8 h-8 rounded-full border border-slate-600"
-              />
-            </div>
           </div>
         </div>
 
@@ -119,27 +109,6 @@ const TabbedChatInterface: React.FC = () => {
                 }}
                 layout="sidebar"
               />
-            </div>
-
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700">
-              <div className="flex items-center space-x-3">
-                <img
-                  src={user?.avatar}
-                  alt={user?.name}
-                  className="w-10 h-10 rounded-full border border-slate-600"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">
-                    {user?.name}
-                  </p>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-xs text-slate-400">
-                      Always available
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -217,7 +217,7 @@ const SocialSetup: React.FC = () => {
         personaReport: aiPersona,
       });
 
-      navigate("/", { replace: true });
+      navigate("/chat", { replace: true });
     } catch (err) {
       console.error("❌ Failed to generate persona:", err);
     } finally {
