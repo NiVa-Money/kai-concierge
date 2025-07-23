@@ -377,7 +377,7 @@ const SocialSetup: React.FC = () => {
             {/* Skip */}
             <div className="text-center">
               <button
-                onClick={() => updateUser({ socialHandles: {} })}
+                onClick={() => navigate("/chat")}
                 className="text-slate-400 text-sm hover:text-white transition-colors"
               >
                 Skip for now

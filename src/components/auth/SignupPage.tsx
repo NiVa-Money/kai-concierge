@@ -8,6 +8,7 @@ const SignupPage: React.FC = () => {
   const [form, setForm] = useState({
     name: "",
     age: "",
+    phoneNumber: "",
     email: "",
     password: "",
   });
@@ -25,6 +26,7 @@ const SignupPage: React.FC = () => {
       await signup({
         name: form.name,
         age: form.age ? parseInt(form.age) : undefined,
+        phoneNumber: form.phoneNumber ? parseInt(form.phoneNumber) : undefined, // convert to number
         email: form.email,
         password: form.password,
       });
@@ -65,6 +67,15 @@ const SignupPage: React.FC = () => {
               onChange={handleChange}
               className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
+            <input
+              type="tel"
+              name="phoneNumber"
+              placeholder="Phone Number"
+              value={form.phoneNumber}
+              onChange={handleChange}
+              className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+
             <input
               type="email"
               name="email"

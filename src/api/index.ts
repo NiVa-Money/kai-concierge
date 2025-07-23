@@ -4,7 +4,9 @@ import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../contexts/firebaseConfig";
 
 // Base Axios instance
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://kai-fullstack-alb-1564110476.us-west-2.elb.amazonaws.com";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://kai-fullstack-alb-1564110476.us-west-2.elb.amazonaws.com";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -20,6 +22,7 @@ const api = axios.create({
 export interface SignupPayload {
   name: string;
   age?: number;
+  phoneNumber?: number;
   email: string;
   password: string;
 }
