@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Phone,
   Mail,
+  Edit,
 } from "lucide-react";
 import { getAllTickets, filterTickets, searchTickets, Ticket } from "../../api";
 import TicketDetailsModal from "./TicketDetailsModal";
@@ -19,20 +20,26 @@ import TicketDetailsModal from "./TicketDetailsModal";
 const OpsDashboard: React.FC = () => {
   // const { updateTicketStatus } = useChat();
   const { user } = useAuth();
-  const [filter, setFilter] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [totalTickets, setTotalTickets] = useState(0);
-  
-  // Additional filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [serviceTypeFilter, setServiceTypeFilter] = useState("all");
   const [dateFromFilter, setDateFromFilter] = useState("");
   const [dateToFilter, setDateToFilter] = useState("");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-
+  // Add state for API metadata
+  const [apiMetadata, setApiMetadata] = useState<{
+    total_tickets: number;
+    new: number;
+    in_progress: number;
+    pending: number;
+    completed: number;
+    cancelled: number;
+  } | null>(null);
+  
   const fetchTickets = async () => {
     try {
       setIsLoading(true);
@@ -41,6 +48,7 @@ const OpsDashboard: React.FC = () => {
       // Check if the response has the expected structure
       if (res.data && res.data.data && res.data.data.tickets) {
         const tickets = res.data.data.tickets;
+        const metadata = res.data.data.metadata;
 
         const safeTickets = tickets.filter((t: Ticket) => {
           return (
@@ -48,17 +56,23 @@ const OpsDashboard: React.FC = () => {
             typeof t.client_message === "string"
           );
         });
+        
         setTickets(safeTickets);
-        setTotalTickets(safeTickets.length);
+        
+        // Set API metadata for stats
+        if (metadata) {
+          setApiMetadata(metadata);
+          console.log('📊 API Metadata:', metadata);
+        }
       } else {
         console.error("Unexpected API response structure:", res.data);
         setTickets([]);
-        setTotalTickets(0);
+        setApiMetadata(null);
       }
     } catch (error) {
       console.error("Failed to fetch tickets:", error);
       setTickets([]);
-      setTotalTickets(0);
+      setApiMetadata(null);
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +102,6 @@ const OpsDashboard: React.FC = () => {
           );
         });
         setTickets(safeTickets);
-        setTotalTickets(response.data.data.total);
       }
     } catch (error) {
       console.error("Failed to search tickets:", error);
@@ -105,29 +118,79 @@ const OpsDashboard: React.FC = () => {
       offset: number;
       status?: string;
       priority?: string;
-      service_type?: string;
-      date_from?: string;
-      date_to?: string;
+      category?: string;
+      assigned_concierge?: string | null;
+      createdAtFrom?: string;
+      createdAtTo?: string;
     } = {
       limit: 50,
       offset: 0
     };
 
     // Add filters only if they're not "all"
-    if (filter !== "all") filterData.status = filter;
+    if (filter !== "all") {
+      filterData.status = filter;
+    }
+    
     if (priorityFilter !== "all") filterData.priority = priorityFilter;
-    if (serviceTypeFilter !== "all") filterData.service_type = serviceTypeFilter;
-    if (dateFromFilter) filterData.date_from = dateFromFilter;
-    if (dateToFilter) filterData.date_to = dateToFilter;
+    if (serviceTypeFilter !== "all") filterData.category = serviceTypeFilter;
+    
+    // Always include assigned_concierge as null (as per working payload)
+    filterData.assigned_concierge = null;
+    
+    // Format dates properly for API - using the exact working format
+    if (dateFromFilter) {
+      try {
+        // Use the exact format from the working payload: "2025-07-20T00:00:00Z"
+        const fromDate = new Date(dateFromFilter);
+        if (!isNaN(fromDate.getTime())) {
+          // Format as YYYY-MM-DDTHH:mm:ssZ (without milliseconds)
+          const year = fromDate.getFullYear();
+          const month = String(fromDate.getMonth() + 1).padStart(2, '0');
+          const day = String(fromDate.getDate()).padStart(2, '0');
+          filterData.createdAtFrom = `${year}-${month}-${day}T00:00:00Z`;
+          console.log('Date filter - From:', dateFromFilter, '→', filterData.createdAtFrom);
+        }
+      } catch {
+        console.error("Invalid from date:", dateFromFilter);
+      }
+    }
+    if (dateToFilter) {
+      try {
+        // Use the exact format from the working payload: "2025-09-25T23:59:59Z"
+        const toDate = new Date(dateToFilter);
+        if (!isNaN(toDate.getTime())) {
+          // Format as YYYY-MM-DDTHH:mm:ssZ (without milliseconds)
+          const year = toDate.getFullYear();
+          const month = String(toDate.getMonth() + 1).padStart(2, '0');
+          const day = String(toDate.getDate()).padStart(2, '0');
+          filterData.createdAtTo = `${year}-${month}-${day}T23:59:59Z`;
+          console.log('Date filter - To:', dateToFilter, '→', filterData.createdAtTo);
+        }
+      } catch {
+        console.error("Invalid to date:", dateToFilter);
+      }
+    }
+
+    // Validate date range
+    if (filterData.createdAtFrom && filterData.createdAtTo) {
+      const fromDate = new Date(filterData.createdAtFrom);
+      const toDate = new Date(filterData.createdAtTo);
+      if (fromDate > toDate) {
+        console.warn("From date is after to date, swapping dates");
+        [filterData.createdAtFrom, filterData.createdAtTo] = [filterData.createdAtTo, filterData.createdAtFrom];
+      }
+    }
 
     // If no filters are applied, fetch all tickets
-    if (Object.keys(filterData).length === 2) { // Only has limit and offset
+    if (Object.keys(filterData).length === 3) { // Only has limit, offset, and assigned_concierge
       await fetchTickets();
       return;
     }
 
     try {
       setIsLoading(true);
+      console.log('Sending filter data:', filterData);
       const response = await filterTickets(filterData);
 
       if (response.data && response.data.data) {
@@ -138,8 +201,8 @@ const OpsDashboard: React.FC = () => {
             typeof t.client_message === "string"
           );
         });
+
         setTickets(safeTickets);
-        setTotalTickets(response.data.data.total);
       }
     } catch (error) {
       console.error("Failed to filter tickets:", error);
@@ -238,21 +301,148 @@ const OpsDashboard: React.FC = () => {
   };
 
   const getCurrentStageName = (ticket: Ticket) => {
-    if (ticket.stages && ticket.stages.length > 0) {
-      const currentStage = ticket.stages.find(
-        (stage: { stageId: string }) => stage.stageId === ticket.currentStage
+    // Debug logging to see what data we have
+    console.log('🔍 Getting stage name for ticket:', ticket.ticket_id, {
+      currentStage: ticket.currentStage,
+      current_stage: ticket.current_stage,
+      stages: ticket.stages,
+      progress: ticket.progress,
+      status: ticket.status
+    });
+
+    // First, try to get stage name from progress array (most reliable)
+    if (ticket.progress && ticket.progress.length > 0) {
+      // Find the current stage from progress array
+      const currentProgress = ticket.progress.find(
+        (item) => item.status === "in_progress" || item.status === "active"
       );
-      return currentStage?.name || "Initial Stage";
+      
+      if (currentProgress && currentProgress.stageName) {
+        console.log('✅ Found current stage from progress:', currentProgress.stageName);
+        return currentProgress.stageName;
+      }
+      
+      // If no active stage in progress, find the next stage after completed ones
+      const completedProgress = ticket.progress.filter(
+        (item) => item.status === "completed"
+      );
+      
+      if (completedProgress.length > 0) {
+        // Find the next stage after the last completed stage
+        const lastCompleted = completedProgress[completedProgress.length - 1];
+        const nextStage = ticket.progress.find(
+          (item) => item.stageId === getNextStageId(lastCompleted.stageId)
+        );
+        
+        if (nextStage && nextStage.stageName) {
+          console.log('✅ Found next stage after completed:', nextStage.stageName);
+          return nextStage.stageName;
+        }
+      }
+      
+      // If still not found, use the last stage in progress array
+      const lastProgress = ticket.progress[ticket.progress.length - 1];
+      if (lastProgress && lastProgress.stageName) {
+        console.log('✅ Using last stage from progress:', lastProgress.stageName);
+        return lastProgress.stageName;
+      }
     }
-    return "Ticket Created";
+
+    // Fallback to stages array
+    if (ticket.stages && ticket.stages.length > 0) {
+      // Try to find the current stage by stageId
+      if (ticket.currentStage) {
+        const currentStage = ticket.stages.find(
+          (stage: { stageId: string }) => stage.stageId === ticket.currentStage
+        );
+        
+        if (currentStage && currentStage.name) {
+          console.log('✅ Found current stage by stageId:', currentStage.name);
+          return currentStage.name;
+        }
+      }
+      
+      // If not found by stageId, find the active/in-progress stage
+      const activeStage = ticket.stages.find(
+        (stage: { status: string }) => stage.status === "in_progress" || stage.status === "active"
+      );
+      
+      if (activeStage && activeStage.name) {
+        console.log('✅ Found active stage:', activeStage.name);
+        return activeStage.name;
+      }
+      
+      // If no active stage, find the next stage after completed ones
+      const completedStages = ticket.stages.filter(
+        (stage: { status: string }) => stage.status === "completed"
+      );
+      
+      if (completedStages.length > 0) {
+        // Find the next stage after the last completed stage
+        const lastCompletedStage = completedStages[completedStages.length - 1];
+        const nextStage = ticket.stages.find(
+          (stage: { order: number }) => stage.order === (lastCompletedStage.order + 1)
+        );
+        
+        if (nextStage && nextStage.name) {
+          console.log('✅ Found next stage after completed:', nextStage.name);
+          return nextStage.name;
+        }
+      }
+      
+      // If still not found, return the first stage name
+      if (ticket.stages[0] && ticket.stages[0].name) {
+        console.log('✅ Using first stage:', ticket.stages[0].name);
+        return ticket.stages[0].name;
+      }
+    }
+    
+    // Fallback based on ticket status - only for tickets without stages
+    switch (ticket.status) {
+      case "new":
+        return "New Request";
+      case "pending":
+        return "Pending Review";
+      case "in_progress":
+        return "Processing"; // More generic than "In Progress"
+      case "completed":
+        return "Completed";
+      case "cancelled":
+        return "Cancelled";
+      default:
+        return "Initial Stage";
+    }
   };
+
+  // Helper function to get next stage ID
+  const getNextStageId = (currentStageId: string) => {
+    const stageMap: { [key: string]: string } = {
+      "stage_1": "stage_2",
+      "stage_2": "stage_3", 
+      "stage_3": "stage_4",
+      "stage_4": "stage_5",
+      "stage_5": "stage_6"
+    };
+    return stageMap[currentStageId] || currentStageId;
+  };
+
   const statusCounts = {
-    new: tickets.filter((t) => t.status === "new").length,
-    created: tickets.filter((t) => t.status === "created").length, // Add this line
-    in_progress: tickets.filter((t) => t.status === "in_progress").length,
-    completed: tickets.filter((t) => t.status === "completed").length,
-    cancelled: tickets.filter((t) => t.status === "cancelled").length,
+    new: apiMetadata?.new || 0,
+    pending: apiMetadata?.pending || 0, // Using pending directly
+    in_progress: apiMetadata?.in_progress || 0,
+    completed: apiMetadata?.completed || 0,
+    cancelled: apiMetadata?.cancelled || 0,
   };
+
+  // Debug logging for status counts
+  console.log('📊 API Metadata:', apiMetadata);
+  console.log('📊 Status Counts (from API):', statusCounts);
+  console.log('📋 All tickets statuses:', tickets.map(t => ({
+    id: t.ticket_id,
+    status: t.status, // Assuming status is directly available on the ticket object
+    currentStage: t.currentStage,
+    stages: t.stages?.length || 0
+  })));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -290,7 +480,7 @@ const OpsDashboard: React.FC = () => {
               <div>
                 <p className="text-slate-400 text-sm">New Requests</p>
                 <p className="text-2xl font-semibold text-white">
-                  {statusCounts.new}
+                  {statusCounts.new} / {apiMetadata?.total_tickets || 0}
                 </p>
               </div>
               <div className="p-2 bg-blue-500/20 rounded-lg">
@@ -302,13 +492,13 @@ const OpsDashboard: React.FC = () => {
           <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-400 text-sm">In Progress</p>
+                <p className="text-slate-400 text-sm">Pending</p>
                 <p className="text-2xl font-semibold text-white">
-                  {statusCounts.in_progress}
+                  {statusCounts.pending} / {apiMetadata?.total_tickets || 0}
                 </p>
               </div>
-              <div className="p-2 bg-yellow-500/20 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-yellow-400" />
+              <div className="p-2 bg-orange-500/20 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-orange-400" />
               </div>
             </div>
           </div>
@@ -316,9 +506,9 @@ const OpsDashboard: React.FC = () => {
           <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-400 text-sm">Created</p>
+                <p className="text-slate-400 text-sm">In Progress</p>
                 <p className="text-2xl font-semibold text-white">
-                  {statusCounts.created}
+                  {statusCounts.in_progress} / {apiMetadata?.total_tickets || 0}
                 </p>
               </div>
               <div className="p-2 bg-yellow-500/20 rounded-lg">
@@ -332,25 +522,11 @@ const OpsDashboard: React.FC = () => {
               <div>
                 <p className="text-slate-400 text-sm">Completed</p>
                 <p className="text-2xl font-semibold text-white">
-                  {statusCounts.completed}
+                  {statusCounts.completed} / {apiMetadata?.total_tickets || 0}
                 </p>
               </div>
               <div className="p-2 bg-green-500/20 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-green-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm">Total Tickets</p>
-                <p className="text-2xl font-semibold text-white">
-                  {totalTickets}
-                </p>
-              </div>
-              <div className="p-2 bg-purple-500/20 rounded-lg">
-                <User className="w-5 h-5 text-purple-400" />
               </div>
             </div>
           </div>
@@ -398,8 +574,7 @@ const OpsDashboard: React.FC = () => {
                 className="bg-slate-900/50 border border-slate-600 rounded px-3 py-1 text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
               >
                 <option value="all">All Status</option>
-                <option value="new">New</option>
-                <option value="created">Created</option>
+                <option value="pending">Pending</option>
                 <option value="in_progress">In Progress</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
@@ -491,7 +666,11 @@ const OpsDashboard: React.FC = () => {
             tickets.map((ticket) => (
               <div
                 key={ticket._id}
-                className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4 hover:border-amber-400/50 transition-colors cursor-pointer"
+                className={`backdrop-blur-lg border rounded-lg p-4 hover:border-amber-400/50 transition-colors cursor-pointer ${
+                  ticket.status === "completed" 
+                    ? "bg-green-900/30 border-green-600/50 hover:border-green-500/50" 
+                    : "bg-slate-800/50 border-slate-700"
+                }`}
                 onClick={() => setSelectedTicket(ticket)}
               >
                 <div className="flex items-start justify-between mb-3">
@@ -501,7 +680,9 @@ const OpsDashboard: React.FC = () => {
                         ticket.status
                       )}`}
                     ></div>
-                    <span className="text-white font-medium">
+                    <span className={`font-medium ${
+                      ticket.status === "completed" ? "text-green-400" : "text-white"
+                    }`}>
                       {ticket.ticket_id}
                     </span>
                   </div>
@@ -534,8 +715,12 @@ const OpsDashboard: React.FC = () => {
                     ></div>
                   </div>
                   <div className="mt-1">
-                    <span className="text-xs text-slate-500">
-                      {getCurrentStageName(ticket)}
+                    <span className="text-xs text-slate-400 font-medium">
+                      {(() => {
+                        const stageName = getCurrentStageName(ticket);
+                        console.log('🎯 Stage name for ticket', ticket.ticket_id, ':', stageName);
+                        return stageName;
+                      })()}
                     </span>
                   </div>
                 </div>
@@ -563,11 +748,11 @@ const OpsDashboard: React.FC = () => {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-slate-400">
+                <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-3 h-3" />
                     <span>
-                      {new Date(ticket.created_at).toLocaleDateString()}
+                      Created: {new Date(ticket.created_at).toLocaleDateString()}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -575,6 +760,48 @@ const OpsDashboard: React.FC = () => {
                     <span>{ticket.session_chat ? 1 : 0}</span>
                   </div>
                 </div>
+
+                {/* Updated Date - Always show if updated_at exists */}
+                {ticket.updated_at && (
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <div className="flex items-center space-x-2">
+                      <Edit className="w-3 h-3" />
+                      <span>
+                        Updated: {new Date(ticket.updated_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-3 h-3" />
+                      <span>
+                        {new Date(ticket.updated_at).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Fallback: Show created date as updated if no updated_at */}
+                {!ticket.updated_at && (
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <div className="flex items-center space-x-2">
+                      <Edit className="w-3 h-3" />
+                      <span>
+                        Updated: {new Date(ticket.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-3 h-3" />
+                      <span>
+                        {new Date(ticket.created_at).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* <div className="mt-3 pt-3 border-t border-slate-600">
                   <div className="flex items-center space-x-2">

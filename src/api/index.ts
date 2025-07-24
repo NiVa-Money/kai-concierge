@@ -61,6 +61,7 @@ export interface Ticket {
   priority: string;
   status: string;
   created_at: string;
+  updated_at?: string;
   session_chat?: string;
   client_preferences?: Record<string, any>;
   estimated_budget?: string;
@@ -70,9 +71,12 @@ export interface Ticket {
   estimated_completion?: string | null;
   smart_suggestions?: string;
   progress?: Array<{
-    stage: string;
+    stageId: string;
+    stageName: string;
+    description: string;
     timestamp: string;
-    meta: Record<string, any>;
+    status: string;
+    meta?: Record<string, any>;
   }>;
   current_stage?: string;
   currentStage?: string;
@@ -182,7 +186,21 @@ export const endSession = (sessionId: string, data: EndSessionPayload) =>
 
 // Tickets
 export const getAllTickets = () =>
-  api.get<{ success: boolean; message: string; data: { tickets: Ticket[] } }>(
+  api.get<{ 
+    success: boolean; 
+    message: string; 
+    data: { 
+      tickets: Ticket[];
+      metadata?: {
+        total_tickets: number;
+        new: number;
+        in_progress: number;
+        pending: number;
+        completed: number;
+        cancelled: number;
+      };
+    } 
+  }>(
     "/api/v1/tickets/"
   );
 
@@ -245,9 +263,10 @@ export const updateTicketStage = (ticketId: string, stageData: {
 export const filterTickets = (filterData: {
   status?: string;
   priority?: string;
-  service_type?: string;
-  date_from?: string;
-  date_to?: string;
+  category?: string;
+  assigned_concierge?: string | null;
+  createdAtFrom?: string;
+  createdAtTo?: string;
   limit?: number;
   offset?: number;
 }) => {
@@ -256,9 +275,10 @@ export const filterTickets = (filterData: {
     message: string;
     data: {
       tickets: Ticket[];
-      total: number;
-      limit: number;
-      offset: number;
+      total?: number;
+      total_count?: number;
+      limit?: number;
+      offset?: number;
     };
     timestamp: string;
   }>(

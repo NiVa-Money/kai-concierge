@@ -214,14 +214,6 @@ const ChatTab: React.FC = () => {
               kai<span className="text-amber-400">°</span>
             </h1>
           </div>
-          {messages.length > 0 && (
-            <button
-              onClick={handleEndSession}
-              className="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/50 hover:bg-slate-600/50 rounded-lg transition-all duration-200 border border-slate-600/50 hover:border-slate-500/50"
-            >
-              End Session
-            </button>
-          )}
         </div>
       </div>
 
@@ -338,6 +330,22 @@ const ChatTab: React.FC = () => {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Floating End Session Button */}
+        {messages.length > 0 && (
+          <div className="flex justify-center mb-4">
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleEndSession}
+              className="px-4 py-2 text-sm font-medium text-red-300 hover:text-red-200 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-all duration-200 border border-red-500/30 hover:border-red-400/40 backdrop-blur-lg shadow-lg"
+            >
+              End Session
+            </motion.button>
+          </div>
+        )}
 
         {/* Input Area */}
         <div className="p-8 bg-slate-800/30 backdrop-blur-lg">
