@@ -212,6 +212,83 @@ export const addTicketProgress = (ticketId: string, progressData: any) =>
     progressData
   );
 
+export const updateTicketStage = (ticketId: string, stageData: {
+  stageId: string;
+  stageName: string;
+  description: string;
+  status: string;
+  notes?: string;
+}) => {
+  // Ensure clean payload structure
+  const cleanPayload = {
+    stageId: stageData.stageId,
+    stageName: stageData.stageName,
+    description: stageData.description,
+    status: stageData.status,
+    notes: stageData.notes || ""
+  };
+  
+  return api.patch<{ 
+    success: boolean; 
+    message: string; 
+    data: { 
+      ticket_id: string; 
+      stage_id: string; 
+    }; 
+    timestamp: string; 
+  }>(
+    `/api/v1/tickets/${ticketId}/stage`,
+    cleanPayload
+  );
+};
+
+export const filterTickets = (filterData: {
+  status?: string;
+  priority?: string;
+  service_type?: string;
+  date_from?: string;
+  date_to?: string;
+  limit?: number;
+  offset?: number;
+}) => {
+  return api.post<{
+    success: boolean;
+    message: string;
+    data: {
+      tickets: Ticket[];
+      total: number;
+      limit: number;
+      offset: number;
+    };
+    timestamp: string;
+  }>(
+    '/api/v1/tickets/filter',
+    filterData
+  );
+};
+
+export const searchTickets = (searchData: {
+  query: string;
+  fields?: string[];
+  limit?: number;
+  offset?: number;
+}) => {
+  return api.post<{
+    success: boolean;
+    message: string;
+    data: {
+      tickets: Ticket[];
+      total: number;
+      limit: number;
+      offset: number;
+    };
+    timestamp: string;
+  }>(
+    '/api/v1/tickets/search',
+    searchData
+  );
+};
+
 export const getSmartSuggestions = (ticketId: string) =>
   api.get<{ data: any }>(`/api/v1/tickets/${ticketId}/smart-suggestions`);
 
