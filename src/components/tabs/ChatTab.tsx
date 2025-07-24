@@ -1,7 +1,30 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
 import { createOrUpdateSession, endSession } from "../../api";
-import { Send } from "lucide-react";
+import { 
+  Send, 
+  Mic, 
+  Plane, 
+  Car, 
+  Utensils, 
+  Calendar,
+  Settings, 
+  MessageSquare,
+  Brain,
+  User,
+  ChevronRight,
+  Sparkles,
+  Zap,
+  Clock,
+  Star,
+  Crown,
+  Diamond,
+  Trophy,
+  Shield,
+  Menu,
+  X
+} from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -10,6 +33,7 @@ const ChatTab: React.FC = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("kai");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
@@ -108,115 +132,250 @@ const ChatTab: React.FC = () => {
     );
   };
 
+  const eliteServices = [
+    { 
+      icon: <Plane className="w-4 h-4" />, 
+      label: "Aviation", 
+      color: "text-blue-400", 
+      description: "Private flights",
+      prompt: "I need assistance with private aviation services. Can you help me arrange a charter flight for a business trip next week?"
+    },
+    { 
+      icon: <Car className="w-4 h-4" />, 
+      label: "Transport", 
+      color: "text-purple-400", 
+      description: "Luxury vehicles",
+      prompt: "I'm looking for luxury transportation services. Can you arrange a limousine service for an important client meeting?"
+    },
+    { 
+      icon: <Utensils className="w-4 h-4" />, 
+      label: "Dining", 
+      color: "text-amber-400", 
+      description: "Fine cuisine",
+      prompt: "I need help with fine dining reservations. Can you recommend and book a Michelin-starred restaurant for a special occasion?"
+    },
+    { 
+      icon: <Calendar className="w-4 h-4" />, 
+      label: "Events", 
+      color: "text-emerald-400", 
+      description: "Exclusive planning",
+      prompt: "I'm planning an exclusive corporate event. Can you help me organize a high-end event with premium services?"
+    },
+  ];
+
+  const handleServiceClick = async (prompt: string) => {
+    if (!userId) return;
+
+    const userMsg = {
+      id: Date.now().toString(),
+      sender: "user",
+      content: prompt,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setIsTyping(true);
+
+    try {
+      const res = await createOrUpdateSession({
+        userId,
+        sessionId: sessionId ?? undefined,
+        question: prompt,
+        persona: JSON.stringify(aiPersona),
+      });
+
+      const agentMsg = {
+        id: Date.now().toString() + "-agent",
+        sender: "agent",
+        content: res.data.agentResponse,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, agentMsg]);
+      setSessionId(res.data.sessionId);
+      setIsTyping(false);
+
+      if (res.data.sessionEnd) {
+        console.log("Session ended. Ticket ID:", res.data.ticketId);
+      }
+    } catch (error: any) {
+      console.error("API error:", error?.response?.data || error.message);
+      setIsTyping(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full relative">
-      {/* Greeting Animation */}
-      <AnimatePresence>
-        {messages.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 bg-gradient-to-br from-slate-900 to-slate-800 z-10"
-          >
-            <div className="text-6xl mb-4 animate-bounce">👋</div>
-            <h3 className="text-2xl text-white mb-2 font-semibold">
-              Good evening, {user?.name?.split(" ")[0]}
-            </h3>
-            <p className="text-slate-400 mb-4 text-lg">
-              How may I assist you today?
-            </p>
-
-            <form
-              onSubmit={handleSubmit}
-              className="w-full max-w-xl flex space-x-2"
-            >
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask anything..."
-                className="flex-1 bg-slate-800 rounded px-3 py-2 text-white focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2 rounded"
-              >
-                <Send className="w-5 h-5" />
-              </button>
-
-              {/* ElevenLabs Widget */}
-              <elevenlabs-convai agent-id="agent_01k0peh8sbfg0vmp2zmt3emk36"></elevenlabs-convai>
-            </form>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Messages with fixed height and scroll */}
-      <div className="p-4 space-y-4 overflow-y-auto" style={{ height: "60vh" }}>
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${
-              msg.sender === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            <div
-              className={`max-w-xl p-3 rounded-lg ${
-                msg.sender === "user"
-                  ? "bg-amber-400/10 text-amber-300 text-right"
-                  : "bg-slate-800/50 text-white text-left"
-              }`}
-            >
-              {formatMessage(msg.content)}
-            </div>
+    <div className="flex-1 flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Header */}
+      <div className="bg-slate-800/30 backdrop-blur-lg border-b border-slate-700/50 px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-xl font-light text-white">
+              kai<span className="text-amber-400">°</span>
+            </h1>
           </div>
-        ))}
-
-        {isTyping && (
-          <div className="text-sm text-slate-500 italic">
-            Agent is typing...
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+          {messages.length > 0 && (
+            <button
+              onClick={handleEndSession}
+              className="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/50 hover:bg-slate-600/50 rounded-lg transition-all duration-200 border border-slate-600/50 hover:border-slate-500/50"
+            >
+              End Session
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* End Session Button */}
-      {sessionId && (
-        <div className="text-center py-2 bg-slate-900 border-t border-slate-800">
-          <button
-            onClick={handleEndSession}
-            className="text-sm text-amber-400 hover:underline"
-          >
-            End Session
-          </button>
-        </div>
-      )}
+      {/* Chat Area */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <AnimatePresence>
+            {messages.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center h-full text-center"
+              >
+                {/* Minimal Welcome */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-center mb-6">
+                    <Crown className="w-8 h-8 text-amber-400" />
+                  </div>
+                  <h2 className="text-2xl font-light text-white mb-2">
+                    Welcome to <span className="text-amber-400">kai°</span>
+                  </h2>
+                  <p className="text-slate-300 text-base">
+                    Your exclusive AI-powered concierge
+                  </p>
+                </div>
 
-      {/* Input */}
-      {messages.length > 0 && (
-        <form
-          onSubmit={handleSubmit}
-          className="p-4 border-t border-slate-700 bg-slate-900 flex space-x-2"
-        >
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask anything..."
-            className="flex-1 bg-slate-800 rounded px-3 py-2 text-white focus:outline-none"
-          />
-          <button
-            type="submit"
-            className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2 rounded"
-          >
-            <Send className="w-5 h-5" />
-          </button>
+                {/* Minimal Services */}
+                <div className="grid grid-cols-2 gap-4 mb-8 w-full max-w-md">
+                  {eliteServices.map((service, index) => (
+                    <motion.button
+                      key={index}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleServiceClick(service.prompt)}
+                      className={`flex flex-col items-center space-y-2 p-4 rounded-lg border border-slate-700/50 hover:border-slate-600 transition-all duration-200 bg-slate-800/30 backdrop-blur-lg cursor-pointer hover:bg-slate-800/50`}
+                    >
+                      <div className={`${service.color}`}>
+                        {service.icon}
+                      </div>
+                      <span className="text-sm font-medium text-white">{service.label}</span>
+                      <span className="text-xs text-slate-400">{service.description}</span>
+                    </motion.button>
+                  ))}
+                </div>
+
+                {/* Minimal Features */}
+                <div className="bg-slate-800/30 backdrop-blur-lg border border-slate-700/50 rounded-lg p-4 w-full max-w-md">
+                  <h3 className="text-sm font-medium text-white mb-3 flex items-center justify-center">
+                    <Star className="w-4 h-4 text-amber-400 mr-2" />
+                    Premium Features
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-1 h-1 bg-emerald-400 rounded-full"></div>
+                      <span className="text-slate-300">Personal Concierge</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-1 h-1 bg-emerald-400 rounded-full"></div>
+                      <span className="text-slate-300">Priority Access</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-1 h-1 bg-emerald-400 rounded-full"></div>
+                      <span className="text-slate-300">Global Network</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-1 h-1 bg-emerald-400 rounded-full"></div>
+                      <span className="text-slate-300">Discrete Service</span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="space-y-4">
+                {messages.map((msg) => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-2xl p-4 rounded-xl ${
+                        msg.sender === "user"
+                          ? "bg-amber-400/10 text-amber-300 border border-amber-400/20"
+                          : "bg-slate-800/50 text-white border border-slate-700"
+                      }`}
+                    >
+                      {formatMessage(msg.content)}
+                    </div>
+                  </motion.div>
+                ))}
+
+                {isTyping && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex justify-start"
+                  >
+                    <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                        <span className="text-slate-400 text-sm">Your concierge is attending...</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Input Area */}
+        <div className="p-8 bg-slate-800/30 backdrop-blur-lg">
+          <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+            <div className="relative">
+              <div className="flex items-center space-x-3 bg-slate-900/50 border border-slate-700/50 rounded-xl p-3 hover:border-slate-600 transition-colors">
+                {/* <button
+                  type="button"
+                  className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors"
+                >
+                  <Mic className="w-6 h-6 text-slate-400" />
+                </button> */}
+                
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="How may I assist you today?"
+                  className="flex-1 bg-transparent text-white placeholder-slate-400 focus:outline-none"
+                />
+                
+                <button
+                  type="submit"
+                  disabled={!input.trim()}
+                  className="p-2 bg-amber-400 hover:bg-amber-500 disabled:bg-slate-700/50 disabled:text-slate-400 rounded-lg transition-colors"
+                >
+                  <Send className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+          </form>
 
           {/* ElevenLabs Widget */}
-          <elevenlabs-convai agent-id="agent_01k0peh8sbfg0vmp2zmt3emk36"></elevenlabs-convai>
-        </form>
-      )}
+          <div className="mt-3">
+            <elevenlabs-convai agent-id="agent_01k0peh8sbfg0vmp2zmt3emk36"></elevenlabs-convai>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

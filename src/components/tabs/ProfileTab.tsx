@@ -85,7 +85,7 @@ const ProfileTab: React.FC = () => {
   const stats = {
     totalRequests: dashboard?.data?.total_requests ?? 0,
     completedRequests: dashboard?.data?.completed_requests ?? 0,
-    avgResponse: dashboard?.data?.avg_response ?? 0,
+    avgResponse: dashboard?.data?.avg_response_minutes ?? 0,
     satisfaction: dashboard?.data?.satisfaction ?? 0,
   };
 
