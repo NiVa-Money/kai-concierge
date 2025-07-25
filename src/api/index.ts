@@ -22,7 +22,7 @@ const api = axios.create({
 export interface SignupPayload {
   name: string;
   age?: number;
-  phone?: string; 
+  phone?: string;
   email: string;
   password: string;
 }
@@ -97,7 +97,7 @@ export interface UpdateTicketPayload {
   priority: "low" | "medium" | "high";
   client_message: string;
   timeline: string;
-  estimated_budget: string;
+  estimated_budget?: string | null;
   special_instructions: string;
   assigned_concierge: string;
   estimated_completion: string | null;
@@ -186,10 +186,10 @@ export const endSession = (sessionId: string, data: EndSessionPayload) =>
 
 // Tickets
 export const getAllTickets = () =>
-  api.get<{ 
-    success: boolean; 
-    message: string; 
-    data: { 
+  api.get<{
+    success: boolean;
+    message: string;
+    data: {
       tickets: Ticket[];
       metadata?: {
         total_tickets: number;
@@ -199,16 +199,26 @@ export const getAllTickets = () =>
         completed: number;
         cancelled: number;
       };
-    } 
-  }>(
-    "/api/v1/tickets/"
-  );
+    };
+  }>("/api/v1/tickets/");
 
-export const updateTicket = (ticketId: string, data: UpdateTicketPayload) =>
-  api.put<{ data: { ticket_id: string } }>(
+// export const updateTicket = (ticketId: string, data: UpdateTicketPayload) =>
+//   api.put<{ data: { ticket_id: string } }>(
+//     `/api/v1/tickets/${ticketId}/`,
+//     data
+//   );
+
+export const updateTicket = (ticketId: string, data: UpdateTicketPayload) => {
+  // Clean numeric fields
+  const cleanedData = { ...data };
+  if (cleanedData.estimated_budget === "") {
+    cleanedData.estimated_budget = null; // or: delete cleanedData.estimated_budget;
+  }
+  return api.put<{ data: { ticket_id: string } }>(
     `/api/v1/tickets/${ticketId}/`,
-    data
+    cleanedData
   );
+};
 
 export const getTicket = (ticketId: string) =>
   api.get<{ data: Ticket }>(`/api/v1/tickets/${ticketId}/`);
@@ -230,34 +240,34 @@ export const addTicketProgress = (ticketId: string, progressData: any) =>
     progressData
   );
 
-export const updateTicketStage = (ticketId: string, stageData: {
-  stageId: string;
-  stageName: string;
-  description: string;
-  status: string;
-  notes?: string;
-}) => {
+export const updateTicketStage = (
+  ticketId: string,
+  stageData: {
+    stageId: string;
+    stageName: string;
+    description: string;
+    status: string;
+    notes?: string;
+  }
+) => {
   // Ensure clean payload structure
   const cleanPayload = {
     stageId: stageData.stageId,
     stageName: stageData.stageName,
     description: stageData.description,
     status: stageData.status,
-    notes: stageData.notes || ""
+    notes: stageData.notes || "",
   };
-  
-  return api.patch<{ 
-    success: boolean; 
-    message: string; 
-    data: { 
-      ticket_id: string; 
-      stage_id: string; 
-    }; 
-    timestamp: string; 
-  }>(
-    `/api/v1/tickets/${ticketId}/stage`,
-    cleanPayload
-  );
+
+  return api.patch<{
+    success: boolean;
+    message: string;
+    data: {
+      ticket_id: string;
+      stage_id: string;
+    };
+    timestamp: string;
+  }>(`/api/v1/tickets/${ticketId}/stage`, cleanPayload);
 };
 
 export const filterTickets = (filterData: {
@@ -281,10 +291,7 @@ export const filterTickets = (filterData: {
       offset?: number;
     };
     timestamp: string;
-  }>(
-    '/api/v1/tickets/filter',
-    filterData
-  );
+  }>("/api/v1/tickets/filter", filterData);
 };
 
 export const searchTickets = (searchData: {
@@ -303,10 +310,7 @@ export const searchTickets = (searchData: {
       offset: number;
     };
     timestamp: string;
-  }>(
-    '/api/v1/tickets/search',
-    searchData
-  );
+  }>("/api/v1/tickets/search", searchData);
 };
 
 export const getSmartSuggestions = (ticketId: string) =>
