@@ -28,6 +28,7 @@ export interface SignupPayload {
   name: string;
   age?: number;
   phone?: string;
+  country_code?: string;
   email: string;
   password: string;
 }

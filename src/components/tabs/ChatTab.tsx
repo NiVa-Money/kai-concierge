@@ -1,31 +1,16 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
 import { createOrUpdateSession, endSession } from "../../api";
 import {
   Send,
-  Mic,
   Plane,
   Car,
   Utensils,
   Calendar,
-  Settings,
-  MessageSquare,
-  Brain,
-  User,
-  ChevronRight,
-  Sparkles,
-  Zap,
-  Clock,
   Star,
   Crown,
-  Diamond,
-  Trophy,
-  Shield,
-  Menu,
-  X,
 } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ChatTab: React.FC = () => {
@@ -33,9 +18,7 @@ const ChatTab: React.FC = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("kai");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
 
   const userId = localStorage.getItem("userId");
   const aiPersona = JSON.parse(localStorage.getItem("aiPersona") || "{}");

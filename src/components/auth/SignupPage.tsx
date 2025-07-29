@@ -19,7 +19,7 @@ const SignupPage: React.FC = () => {
     name: "",
     age: "",
     phone: "",
-    countryCode: "+971",
+    country_code: "+971",
     email: "",
     password: "",
   });
@@ -37,7 +37,8 @@ const SignupPage: React.FC = () => {
       await signup({
         name: form.name,
         age: form.age ? parseInt(form.age) : undefined,
-        phone: `${form.countryCode}${form.phone}` || undefined,
+        phone: form.phone || undefined,
+        country_code: form.country_code, // Send separately
         email: form.email,
         password: form.password,
       });
@@ -82,7 +83,7 @@ const SignupPage: React.FC = () => {
               type="text"
               name="countryCode"
               placeholder="+1"
-              value={form.countryCode}
+              value={form.country_code}
               onChange={handleChange}
               className="w-20 bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
