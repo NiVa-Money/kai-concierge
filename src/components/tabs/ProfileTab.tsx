@@ -48,37 +48,23 @@ const ProfileTab: React.FC = () => {
     return femaleNames.includes(name.toLowerCase());
   };
 
-  useEffect(() => {
-    // const fetchUserData = async () => {
-    //   try {
-    //     const storedId = localStorage.getItem("userId");
-    //     if (storedId && (!user || !user.name || !user.email)) {
-    //       const response = await getUserInfo(storedId);
-    //       updateUser(response.data.data);
-    //     }
-    //   } catch (err) {
-    //     console.error("Failed to fetch user info:", err);
-    //     setError("Unable to load user information.");
-    //   }
-    // };
-
-    const fetchDashboard = async () => {
-      try {
-        const userId = localStorage.getItem("userId");
-        if (userId) {
-          const response = await getUserDashboard(userId);
-          setDashboard(response.data);
-          console.log(response.data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch dashboard:", err);
-        setError("Unable to load dashboard data.");
-      } finally {
-        setLoading(false);
+  const fetchDashboard = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      if (userId) {
+        const response = await getUserDashboard(userId);
+        setDashboard(response.data);
+        console.log(response.data);
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch dashboard:", err);
+      setError("Unable to load dashboard data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // fetchUserData();
+  useEffect(() => {
     fetchDashboard();
   }, []);
 
@@ -89,6 +75,23 @@ const ProfileTab: React.FC = () => {
     satisfaction: dashboard?.data?.satisfaction ?? 0,
   };
 
+  // const handleUpdateUser = async () => {
+  //   const userId = localStorage.getItem("userId");
+  //   if (!userId) return;
+
+  //   setUpdating(true);
+  //   try {
+  //     const response = await updateUserById(userId, editForm);
+  //     updateUser(response.data.data);
+  //     setShowEditModal(false);
+  //   } catch (err) {
+  //     console.error("Error updating user:", err);
+  //     setError("Failed to update user details.");
+  //   } finally {
+  //     setUpdating(false);
+  //   }
+  // };
+
   const handleUpdateUser = async () => {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
@@ -97,6 +100,7 @@ const ProfileTab: React.FC = () => {
     try {
       const response = await updateUserById(userId, editForm);
       updateUser(response.data.data);
+      await fetchDashboard(); // <-- Add this to refresh UI
       setShowEditModal(false);
     } catch (err) {
       console.error("Error updating user:", err);
