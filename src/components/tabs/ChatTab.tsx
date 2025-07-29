@@ -209,7 +209,7 @@ const ChatTab: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
       <div className="bg-slate-800/30 backdrop-blur-lg border-b border-slate-700/50 px-6 py-3">
         <div className="flex items-center justify-between">
@@ -224,7 +224,7 @@ const ChatTab: React.FC = () => {
       {/* Chat Area */}
       <div className="flex-1 flex flex-col min-h-0">
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 min-h-0">
           <AnimatePresence>
             {messages.length === 0 ? (
               <motion.div
