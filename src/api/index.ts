@@ -3,10 +3,14 @@ import axios from "axios";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../contexts/firebaseConfig";
 
-// Base Axios instance
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://kai-fullstack-alb-1564110476.us-west-2.elb.amazonaws.com";
+
+// Base Axios instance 
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost";
+
+const PORT = import.meta.env.VITE_API_PORT || 5002;
+
+const API_BASE_URL = `${BASE_URL}:${PORT}`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -14,6 +18,7 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
+
 
 // =======================
 // Types
