@@ -146,10 +146,12 @@
 import React, { useState } from "react";
 import { signup } from "../../api";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { updateUser } = useAuth();
   const isGoogleSignup = Boolean(location.state?.fromGoogle);
 
   const [form, setForm] = useState({
@@ -172,7 +174,7 @@ const SignupPage: React.FC = () => {
     setError("");
     setLoading(true);
     try {
-      await signup({
+      const res = await signup({
         name: form.name,
         age: form.age ? parseInt(form.age) : undefined,
         phone: form.phone || undefined,
@@ -180,6 +182,19 @@ const SignupPage: React.FC = () => {
         email: form.email,
         password: isGoogleSignup ? "" : form.password,
       });
+
+      const userId = res.data?.data?.user_id;
+      if (userId) {
+        localStorage.setItem("userId", userId);
+
+        // Update AuthContext user
+        updateUser({
+          user_id: userId,
+          name: form.name,
+          email: form.email,
+        });
+      }
+
       navigate("/social-setup");
     } catch (err: any) {
       setError("Signup failed. Email might already be registered.");
