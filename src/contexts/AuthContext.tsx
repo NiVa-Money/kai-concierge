@@ -34,26 +34,35 @@
 //   const [user, setUser] = useState<User | null>(null);
 //   const [isLoading, setIsLoading] = useState(true);
 
+//   // Load user from localStorage on initial load
 //   useEffect(() => {
-//     const storedUser = null;
-//     if (storedUser) {
-//       setUser(JSON.parse(storedUser));
+//     const storedUserId = localStorage.getItem("userId");
+//     if (storedUserId) {
+//       getUserInfo(storedUserId)
+//         .then((res) => setUser(res.data.data))
+//         .catch((err) => console.error("Failed to restore user:", err))
+//         .finally(() => setIsLoading(false));
+//     } else {
+//       setIsLoading(false);
 //     }
-//     setIsLoading(false);
 //   }, []);
 
+//   // Login function
 //   const login = async (email: string, password: string) => {
 //     setIsLoading(true);
 //     try {
 //       const res = await loginApi({ email, password });
-//       const userId = res.data.user_id;
+//       const userId = res.data.data.user_id; // ✅ Correct property from API response
 //       localStorage.setItem("userId", userId);
 
-//      const profileRes = await getUserInfo(userId);
-//      const userData: User = profileRes.data as User;
+//       const profileRes = await getUserInfo(userId);
+//       const userData = profileRes.data.data as User; // Cast to User
+
+//       if (!userData.user_id) {
+//         userData.user_id = userId; // Ensure user_id is present
+//       }
 
 //       setUser(userData);
-//
 //     } catch (err) {
 //       console.error("Login error:", err);
 //       throw err;
@@ -62,17 +71,27 @@
 //     }
 //   };
 
+//   // Logout function
 //   const logout = () => {
 //     setUser(null);
-//
+
 //     localStorage.removeItem("userId");
 //   };
 
+//   // Update user function
 //   const updateUser = (updates: Partial<User>) => {
 //     const merged = { ...(user || {}), ...updates };
-//     if (merged.name && merged.email && merged.userId) {
+
+//     // Auto-fill user_id from localStorage if missing
+//     if (!merged.user_id) {
+//       const storedUserId = localStorage.getItem("userId");
+//       if (storedUserId) {
+//         merged.user_id = storedUserId;
+//       }
+//     }
+
+//     if (merged.user_id) {
 //       setUser(merged as User);
-//
 //     } else {
 //       console.warn("Incomplete user data, not updating:", merged);
 //     }
@@ -129,17 +148,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from localStorage on initial load
+  // Restore user from localStorage
   useEffect(() => {
-    const storedUser = null;
+    const storedUser = localStorage.getItem("user");
+    const storedUserId = localStorage.getItem("userId");
+
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
+        setIsLoading(false);
+        return;
       } catch (err) {
-        console.warn("Invalid user data in localStorage:", err);
+        console.warn("Failed to parse stored user:", err);
       }
     }
-    setIsLoading(false);
+
+    if (storedUserId) {
+      // Fetch user profile if we only have userId
+      getUserInfo(storedUserId)
+        .then((res) => {
+          const userData = res.data.data as User;
+          setUser(userData);
+          localStorage.setItem("user", JSON.stringify(userData));
+        })
+        .catch((err) => {
+          console.error("Failed to restore user:", err);
+          localStorage.removeItem("userId");
+          localStorage.removeItem("user");
+        })
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   // Login function
@@ -147,17 +187,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       const res = await loginApi({ email, password });
-      const userId = res.data.data.user_id; // ✅ Correct property from API response
+      const userId = res.data.data.user_id;
       localStorage.setItem("userId", userId);
 
       const profileRes = await getUserInfo(userId);
-      const userData = profileRes.data.data as User; // Cast to User
-
-      if (!userData.user_id) {
-        userData.user_id = userId; // Ensure user_id is present
-      }
+      const userData = profileRes.data.data as User;
 
       setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
     } catch (err) {
       console.error("Login error:", err);
       throw err;
@@ -169,7 +206,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Logout function
   const logout = () => {
     setUser(null);
-
+    localStorage.removeItem("user");
     localStorage.removeItem("userId");
   };
 
@@ -177,7 +214,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateUser = (updates: Partial<User>) => {
     const merged = { ...(user || {}), ...updates };
 
-    // Auto-fill user_id from localStorage if missing
     if (!merged.user_id) {
       const storedUserId = localStorage.getItem("userId");
       if (storedUserId) {
@@ -187,6 +223,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (merged.user_id) {
       setUser(merged as User);
+      localStorage.setItem("user", JSON.stringify(merged));
     } else {
       console.warn("Incomplete user data, not updating:", merged);
     }
