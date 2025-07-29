@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import {
   Clock,
-  CheckCircle,
-  AlertCircle,
   User,
   Calendar,
   Filter,
@@ -485,64 +483,6 @@ const OpsDashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm">New Requests</p>
-                <p className="text-2xl font-semibold text-white">
-                  {statusCounts.new} / {apiMetadata?.total_tickets || 0}
-                </p>
-              </div>
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <Clock className="w-5 h-5 text-blue-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm">Pending</p>
-                <p className="text-2xl font-semibold text-white">
-                  {statusCounts.pending} / {apiMetadata?.total_tickets || 0}
-                </p>
-              </div>
-              <div className="p-2 bg-orange-500/20 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-orange-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm">In Progress</p>
-                <p className="text-2xl font-semibold text-white">
-                  {statusCounts.in_progress} / {apiMetadata?.total_tickets || 0}
-                </p>
-              </div>
-              <div className="p-2 bg-yellow-500/20 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-yellow-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm">Completed</p>
-                <p className="text-2xl font-semibold text-white">
-                  {statusCounts.completed} / {apiMetadata?.total_tickets || 0}
-                </p>
-              </div>
-              <div className="p-2 bg-green-500/20 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-green-400" />
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Filters */}
         <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between mb-4">
