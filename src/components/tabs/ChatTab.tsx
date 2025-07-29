@@ -2,14 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
 import { createOrUpdateSession, endSession } from "../../api";
-import { 
-  Send, 
-  Mic, 
-  Plane, 
-  Car, 
-  Utensils, 
+import {
+  Send,
+  Mic,
+  Plane,
+  Car,
+  Utensils,
   Calendar,
-  Settings, 
+  Settings,
   MessageSquare,
   Brain,
   User,
@@ -23,7 +23,7 @@ import {
   Trophy,
   Shield,
   Menu,
-  X
+  X,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -133,33 +133,37 @@ const ChatTab: React.FC = () => {
   };
 
   const eliteServices = [
-    { 
-      icon: <Plane className="w-4 h-4" />, 
-      label: "Aviation", 
-      color: "text-blue-400", 
+    {
+      icon: <Plane className="w-4 h-4" />,
+      label: "Aviation",
+      color: "text-blue-400",
       description: "Private flights",
-      prompt: "I need assistance with private aviation services. Can you help me arrange a charter flight for a business trip next week?"
+      prompt:
+        "I need assistance with private aviation services. Can you help me arrange a charter flight for a business trip next week?",
     },
-    { 
-      icon: <Car className="w-4 h-4" />, 
-      label: "Transport", 
-      color: "text-purple-400", 
+    {
+      icon: <Car className="w-4 h-4" />,
+      label: "Transport",
+      color: "text-purple-400",
       description: "Luxury vehicles",
-      prompt: "I'm looking for luxury transportation services. Can you arrange a limousine service for an important client meeting?"
+      prompt:
+        "I'm looking for luxury transportation services. Can you arrange a limousine service for an important client meeting?",
     },
-    { 
-      icon: <Utensils className="w-4 h-4" />, 
-      label: "Dining", 
-      color: "text-amber-400", 
+    {
+      icon: <Utensils className="w-4 h-4" />,
+      label: "Dining",
+      color: "text-amber-400",
       description: "Fine cuisine",
-      prompt: "I need help with fine dining reservations. Can you recommend and book a Michelin-starred restaurant for a special occasion?"
+      prompt:
+        "I need help with fine dining reservations. Can you recommend and book a Michelin-starred restaurant for a special occasion?",
     },
-    { 
-      icon: <Calendar className="w-4 h-4" />, 
-      label: "Events", 
-      color: "text-emerald-400", 
+    {
+      icon: <Calendar className="w-4 h-4" />,
+      label: "Events",
+      color: "text-emerald-400",
       description: "Exclusive planning",
-      prompt: "I'm planning an exclusive corporate event. Can you help me organize a high-end event with premium services?"
+      prompt:
+        "I'm planning an exclusive corporate event. Can you help me organize a high-end event with premium services?",
     },
   ];
 
@@ -251,11 +255,13 @@ const ChatTab: React.FC = () => {
                       onClick={() => handleServiceClick(service.prompt)}
                       className={`flex flex-col items-center space-y-2 p-4 rounded-lg border border-slate-700/50 hover:border-slate-600 transition-all duration-200 bg-slate-800/30 backdrop-blur-lg cursor-pointer hover:bg-slate-800/50`}
                     >
-                      <div className={`${service.color}`}>
-                        {service.icon}
-                      </div>
-                      <span className="text-sm font-medium text-white">{service.label}</span>
-                      <span className="text-xs text-slate-400">{service.description}</span>
+                      <div className={`${service.color}`}>{service.icon}</div>
+                      <span className="text-sm font-medium text-white">
+                        {service.label}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {service.description}
+                      </span>
                     </motion.button>
                   ))}
                 </div>
@@ -293,7 +299,9 @@ const ChatTab: React.FC = () => {
                     key={msg.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                    className={`flex ${
+                      msg.sender === "user" ? "justify-end" : "justify-start"
+                    }`}
                   >
                     <div
                       className={`max-w-2xl p-4 rounded-xl ${
@@ -317,10 +325,18 @@ const ChatTab: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <div className="flex space-x-1">
                           <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          <div
+                            className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.1s" }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.2s" }}
+                          ></div>
                         </div>
-                        <span className="text-slate-400 text-sm">Your concierge is attending...</span>
+                        <span className="text-slate-400 text-sm">
+                          Your concierge is attending...
+                        </span>
                       </div>
                     </div>
                   </motion.div>
@@ -358,7 +374,7 @@ const ChatTab: React.FC = () => {
                 >
                   <Mic className="w-6 h-6 text-slate-400" />
                 </button> */}
-                
+
                 <input
                   type="text"
                   value={input}
@@ -366,7 +382,7 @@ const ChatTab: React.FC = () => {
                   placeholder="How may I assist you today?"
                   className="flex-1 bg-transparent text-white placeholder-slate-400 focus:outline-none"
                 />
-                
+
                 <button
                   type="submit"
                   disabled={!input.trim()}
@@ -381,6 +397,11 @@ const ChatTab: React.FC = () => {
           {/* ElevenLabs Widget */}
           <div className="mt-3">
             <elevenlabs-convai agent-id="agent_01k0peh8sbfg0vmp2zmt3emk36"></elevenlabs-convai>
+            <script
+              src="https://unpkg.com/@elevenlabs/convai-widget-embed"
+              async
+              type="text/javascript"
+            ></script>
           </div>
         </div>
       </div>

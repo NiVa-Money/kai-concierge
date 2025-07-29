@@ -1,10 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { signup } from "../../api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
+const location = useLocation();
+React.useEffect(() => {
+  if (location.state) {
+    setForm((prev) => ({
+      ...prev,
+      name: location.state.name || "",
+      email: location.state.email || "",
+    }));
+  }
+}, [location.state]);
   const [form, setForm] = useState({
     name: "",
     age: "",
@@ -30,7 +40,7 @@ const SignupPage: React.FC = () => {
         email: form.email,
         password: form.password,
       });
-      navigate("/login"); // redirect after signup
+      navigate("/social-setup"); // redirect after signup
     } catch (err: any) {
       setError("Signup failed. Email might already be registered.");
       console.error(err);

@@ -35,7 +35,7 @@
 //   const [isLoading, setIsLoading] = useState(true);
 
 //   useEffect(() => {
-//     const storedUser = localStorage.getItem("kai-user");
+//     const storedUser = null;
 //     if (storedUser) {
 //       setUser(JSON.parse(storedUser));
 //     }
@@ -53,7 +53,7 @@
 //      const userData: User = profileRes.data as User;
 
 //       setUser(userData);
-//       localStorage.setItem("kai-user", JSON.stringify(userData));
+//
 //     } catch (err) {
 //       console.error("Login error:", err);
 //       throw err;
@@ -64,7 +64,7 @@
 
 //   const logout = () => {
 //     setUser(null);
-//     localStorage.removeItem("kai-user");
+//
 //     localStorage.removeItem("userId");
 //   };
 
@@ -72,7 +72,7 @@
 //     const merged = { ...(user || {}), ...updates };
 //     if (merged.name && merged.email && merged.userId) {
 //       setUser(merged as User);
-//       localStorage.setItem("kai-user", JSON.stringify(merged));
+//
 //     } else {
 //       console.warn("Incomplete user data, not updating:", merged);
 //     }
@@ -92,7 +92,6 @@
 //     </AuthContext.Provider>
 //   );
 // };
-
 
 import React, {
   createContext,
@@ -132,13 +131,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Load user from localStorage on initial load
   useEffect(() => {
-    const storedUser = localStorage.getItem("kai-user");
+    const storedUser = null;
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch (err) {
         console.warn("Invalid user data in localStorage:", err);
-        localStorage.removeItem("kai-user");
       }
     }
     setIsLoading(false);
@@ -160,7 +158,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       setUser(userData);
-      localStorage.setItem("kai-user", JSON.stringify(userData));
     } catch (err) {
       console.error("Login error:", err);
       throw err;
@@ -172,7 +169,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Logout function
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("kai-user");
+
     localStorage.removeItem("userId");
   };
 
@@ -180,9 +177,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateUser = (updates: Partial<User>) => {
     const merged = { ...(user || {}), ...updates };
 
+    // Auto-fill user_id from localStorage if missing
+    if (!merged.user_id) {
+      const storedUserId = localStorage.getItem("userId");
+      if (storedUserId) {
+        merged.user_id = storedUserId;
+      }
+    }
+
     if (merged.user_id) {
       setUser(merged as User);
-      localStorage.setItem("kai-user", JSON.stringify(merged));
     } else {
       console.warn("Incomplete user data, not updating:", merged);
     }

@@ -303,7 +303,8 @@ const ProfileTab: React.FC = () => {
             Recent Activity
           </h3>
 
-          <div className="space-y-3">
+          {/* Scrollable container */}
+          <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
             {dashboard?.data?.recent_activity?.length > 0 ? (
               dashboard.data.recent_activity.map(
                 (activity: any, idx: number) => (
