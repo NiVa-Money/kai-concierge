@@ -49,8 +49,12 @@ import { ChatProvider } from "./contexts/ChatContext";
 import LoginPage from "./components/auth/LoginPage";
 import SocialSetup from "./components/auth/SocialSetup";
 import TabbedChatInterface from "./components/chat/TabbedChatInterface";
-import OpsDashboard from "./components/ops/OpsDashboard";
+import OpsDashboard from "./components/ops/TicketsView";
 import SignupPage from "./components/auth/SignupPage";
+import ConciergeLayout from "./components/ops/ConciergeLayout";
+import DashboardView from "./components/ops/OpsDashboard";
+import CustomersView from "./components/ops/CustomersView";
+import SettingsView from "./components/ops/SettingsView";
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -82,7 +86,15 @@ const AppContent: React.FC = () => {
               user.isOpsTeam ? <OpsDashboard /> : <TabbedChatInterface />
             }
           />
-          <Route path="/ops" element={<OpsDashboard />} />
+          {/* <Route path="/ops" element={<OpsDashboard />} /> */}
+          <Route path="/ops" element={<ConciergeLayout />}>
+            <Route index element={<Navigate to="/ops/dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardView />} />
+            <Route path="tickets" element={<OpsDashboard />} />
+            <Route path="customers" element={<CustomersView />} />
+            <Route path="settings" element={<SettingsView />} />
+          </Route>
+
           <Route path="/chat" element={<TabbedChatInterface />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
