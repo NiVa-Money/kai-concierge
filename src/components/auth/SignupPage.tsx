@@ -174,24 +174,31 @@ const SignupPage: React.FC = () => {
     setError("");
     setLoading(true);
     try {
-      const res = await signup({
+      const signupData: any = {
         name: form.name,
         age: form.age ? parseInt(form.age) : undefined,
         phone: form.phone || undefined,
         country_code: form.country_code,
         email: form.email,
-        password: isGoogleSignup ? "" : form.password,
-      });
+      };
+
+      // Only include password if it's not a Google signup
+      if (!isGoogleSignup) {
+        signupData.password = form.password;
+      }
+
+      const res = await signup(signupData);
 
       const userId = res.data?.data?.user_id;
       if (userId) {
         localStorage.setItem("userId", userId);
 
-        // Update AuthContext user
+        // Update AuthContext user with complete profile
         updateUser({
           user_id: userId,
           name: form.name,
           email: form.email,
+          age: form.age ? parseInt(form.age) : undefined,
         });
       }
 
@@ -211,7 +218,14 @@ const SignupPage: React.FC = () => {
           <h1 className="text-4xl font-light text-white mb-2">
             kai<span className="text-amber-400">°</span>
           </h1>
-          <p className="text-slate-400 text-sm">Sign up for concierge access</p>
+          <p className="text-slate-400 text-sm">
+            {isGoogleSignup ? "Complete your profile" : "Sign up for concierge access"}
+          </p>
+          {isGoogleSignup && (
+            <p className="text-amber-400 text-sm mt-2">
+              ✓ Google account connected
+            </p>
+          )}
         </div>
 
         <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-2xl p-8 shadow-2xl">
@@ -232,22 +246,24 @@ const SignupPage: React.FC = () => {
               onChange={handleChange}
               className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
-            <input
-              type="text"
-              name="country_code"
-              placeholder="+1"
-              value={form.country_code}
-              onChange={handleChange}
-              className="w-20 bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
-            <input
-              type="text"
-              name="phone"
-              placeholder="Phone Number"
-              value={form.phone}
-              onChange={handleChange}
-              className="flex-1 bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                name="country_code"
+                placeholder="+1"
+                value={form.country_code}
+                onChange={handleChange}
+                className="w-20 bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+              <input
+                type="text"
+                name="phone"
+                placeholder="Phone Number"
+                value={form.phone}
+                onChange={handleChange}
+                className="flex-1 bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </div>
 
             <input
               type="email"
@@ -255,7 +271,10 @@ const SignupPage: React.FC = () => {
               placeholder="Email"
               value={form.email}
               onChange={handleChange}
-              className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              disabled={isGoogleSignup}
+              className={`w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 ${
+                isGoogleSignup ? "opacity-60 cursor-not-allowed" : ""
+              }`}
             />
 
             {!isGoogleSignup && (

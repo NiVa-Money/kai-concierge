@@ -178,17 +178,18 @@ const LoginPage: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     setError("");
+    setLoading(true);
     try {
       const result = await handleGoogleAuth();
-      localStorage.setItem("userId", result.user_id);
-      updateUser({
-        user_id: result.user_id,
-        name: result.name,
-        email: result.email,
-      });
-
+      
       if (result.type === "login") {
-        // Old user -> go directly to chat
+        // Existing user -> go directly to chat
+        localStorage.setItem("userId", result.user_id);
+        updateUser({
+          user_id: result.user_id,
+          name: result.name,
+          email: result.email,
+        });
         navigate("/chat");
       } else if (result.type === "signup") {
         // New Google user -> Signup with prefilled fields
@@ -201,6 +202,8 @@ const LoginPage: React.FC = () => {
       setError(
         "Google login failed. Please try again. If the issue persists, try a different method."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -295,11 +298,11 @@ const LoginPage: React.FC = () => {
 
           <button
             onClick={handleGoogleLogin}
-            disabled={isLoading}
+            disabled={loading || isLoading}
             className="w-full bg-white hover:bg-gray-100 text-slate-900 font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50"
           >
             <Chrome className="w-5 h-5" />
-            <span>Continue with Google</span>
+            <span>{loading ? "Signing in..." : "Continue with Google"}</span>
           </button>
 
           <button
