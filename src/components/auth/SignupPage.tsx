@@ -5,20 +5,21 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
-const location = useLocation();
-React.useEffect(() => {
-  if (location.state) {
-    setForm((prev) => ({
-      ...prev,
-      name: location.state.name || "",
-      email: location.state.email || "",
-    }));
-  }
-}, [location.state]);
+  const location = useLocation();
+  React.useEffect(() => {
+    if (location.state) {
+      setForm((prev) => ({
+        ...prev,
+        name: location.state.name || "",
+        email: location.state.email || "",
+      }));
+    }
+  }, [location.state]);
   const [form, setForm] = useState({
     name: "",
     age: "",
     phone: "",
+    countryCode: "+971",
     email: "",
     password: "",
   });
@@ -36,7 +37,7 @@ React.useEffect(() => {
       await signup({
         name: form.name,
         age: form.age ? parseInt(form.age) : undefined,
-        phone: form.phone || undefined,
+        phone: `${form.countryCode}${form.phone}` || undefined,
         email: form.email,
         password: form.password,
       });
@@ -79,11 +80,19 @@ React.useEffect(() => {
             />
             <input
               type="text"
+              name="countryCode"
+              placeholder="+1"
+              value={form.countryCode}
+              onChange={handleChange}
+              className="w-20 bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+            <input
+              type="text"
               name="phone"
               placeholder="Phone Number"
               value={form.phone}
               onChange={handleChange}
-              className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="flex-1 bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
 
             <input
