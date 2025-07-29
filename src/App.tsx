@@ -99,8 +99,11 @@ const AppContent: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
       ) : (
-        // Redirect unauthenticated users to login
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        // Redirect unauthenticated users to login, but allow signup access
+        <>
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </>
       )}
     </Routes>
   );

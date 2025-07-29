@@ -30,7 +30,7 @@ export interface SignupPayload {
   phone?: string;
   country_code?: string;
   email: string;
-  password: string;
+  password?: string; // Make password optional for Google auth
 }
 
 export interface LoginPayload {
@@ -125,8 +125,14 @@ export interface GoogleSignInResponse {
 // =======================
 
 // Auth
-export const signup = (data: SignupPayload) =>
-  api.post<{ data: { user_id: string } }>("/api/v1/users/signup", data);
+export const signup = (data: SignupPayload) => {
+  // Remove password field if it's empty or undefined for Google auth
+  const cleanData = { ...data };
+  if (!cleanData.password) {
+    delete cleanData.password;
+  }
+  return api.post<{ data: { user_id: string } }>("/api/v1/users/signup", cleanData);
+};
 
 export const login = (data: LoginPayload) =>
   api.post<{
