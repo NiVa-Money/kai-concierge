@@ -3,7 +3,20 @@ import React, { useEffect, useState } from "react";
 import { getUserSessions, getSessionDetails, SessionResponse } from "../../api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useChat } from "../../contexts/ChatContext";
-import { Clock, MessageSquare, ArrowLeft, User, Bot } from "lucide-react";
+import { 
+  Clock, 
+  MessageSquare, 
+  ArrowLeft, 
+  User, 
+  Bot, 
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Ticket,
+  User as UserIcon,
+  CheckCircle,
+  XCircle
+} from "lucide-react";
 
 const SessionsTab: React.FC = () => {
   const [sessions, setSessions] = useState<SessionResponse[]>([]);
@@ -12,6 +25,7 @@ const SessionsTab: React.FC = () => {
   const [selectedSession, setSelectedSession] = useState<SessionResponse | null>(null);
   const [sessionDetails, setSessionDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user } = useAuth();
   const { setCurrentSession, loadSessionMessages } = useChat();
 
@@ -126,113 +140,216 @@ const SessionsTab: React.FC = () => {
     });
   };
 
-  // Session Details View
+  // Grok-style Chat Interface
   if (selectedSession && sessionDetails) {
     return (
-      <div className="h-full flex flex-col bg-slate-800/50 backdrop-blur-lg">
-        {/* Header */}
-        <div className="p-4 border-b border-slate-700">
-          <div className="flex items-center space-x-3 mb-2">
+      <div className="h-full flex bg-slate-900">
+        {/* Collapsible Sidebar */}
+        <div className={`${sidebarCollapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-slate-800/50 border-r border-slate-700 flex flex-col`}>
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+            {!sidebarCollapsed && (
+              <h3 className="text-white font-medium">Sessions</h3>
+            )}
             <button
-              onClick={handleBackToSessions}
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-slate-400" />
+              {sidebarCollapsed ? (
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              ) : (
+                <ChevronLeft className="w-4 h-4 text-slate-400" />
+              )}
             </button>
-            <h2 className="text-lg font-semibold text-white">Session Details</h2>
           </div>
-          <div className="flex items-center justify-between text-sm text-slate-400">
-            <span>Session ID: {sessionDetails.sessionId}</span>
-            <span className={`px-2 py-1 rounded-full ${
-              sessionDetails.isSessionEnd 
-                ? "bg-slate-600/50 text-slate-400" 
-                : "bg-green-500/20 text-green-400"
-            }`}>
-              {sessionDetails.isSessionEnd ? "Ended" : "Active"}
-            </span>
-          </div>
-          <div className="text-xs text-slate-500 mt-1">
-            Started: {formatDate(sessionDetails.sessionStartAt)}
-            {sessionDetails.sessionEndAt && (
-              <span className="ml-4">Ended: {formatDate(sessionDetails.sessionEndAt)}</span>
-            )}
+
+          {/* Sessions List */}
+          <div className="flex-1 overflow-y-auto">
+            {sessions.map((session) => (
+              <button
+                key={session.session_id}
+                onClick={() => session.session_id && handleSessionClick(session.session_id)}
+                className={`w-full text-left p-3 border-b border-slate-700 hover:bg-slate-700/50 transition-colors ${
+                  selectedSession?.session_id === session.session_id ? 'bg-amber-400/10 border-amber-400/20' : ''
+                }`}
+              >
+                {sidebarCollapsed ? (
+                  <div className="flex justify-center">
+                    <MessageSquare className="w-5 h-5 text-slate-400" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="font-medium text-white truncate flex-1 text-sm">
+                        {session.question && session.question.length > 30
+                          ? session.question.substring(0, 30) + "..."
+                          : session.question ?? ""}
+                      </h4>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ml-2 ${
+                          session.status === "active"
+                            ? "bg-green-500/20 text-green-400"
+                            : "bg-slate-600/50 text-slate-400"
+                        }`}
+                      >
+                        {session.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-xs text-slate-400">
+                      <Clock className="w-3 h-3 mr-1" />
+                      {session.created_at ? formatDate(session.created_at) : ""}
+                    </div>
+                  </>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {loadingDetails ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
-            </div>
-          ) : sessionDetails.chats && sessionDetails.chats.length > 0 ? (
-            sessionDetails.chats.map((chat: any) => (
-              <div key={chat.id} className="space-y-4">
-                {/* User Message */}
-                <div className="flex justify-end">
-                  <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-2xl bg-amber-400 text-slate-900">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <User className="w-4 h-4" />
-                      <span className="text-xs font-medium">You</span>
-                    </div>
-                    <div className="text-sm">{formatMessage(chat.question)}</div>
-                    <div className="text-xs text-slate-600 mt-1">
-                      {formatDate(chat.time)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* AI Response */}
-                <div className="flex justify-start">
-                  <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-2xl bg-slate-800 text-white">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Bot className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-medium text-amber-400">AI Assistant</span>
-                    </div>
-                    <div className="text-sm">{formatMessage(chat.agent_response)}</div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      {formatDate(chat.time)}
-                    </div>
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col">
+          {/* Chat Header */}
+          <div className="bg-slate-800/50 border-b border-slate-700 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleBackToSessions}
+                  className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5 text-slate-400" />
+                </button>
+                <div>
+                  <h2 className="text-lg font-medium text-white">Session Chat</h2>
+                  <div className="flex items-center space-x-4 text-sm text-slate-400">
+                    <span>ID: {sessionDetails.sessionId}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      sessionDetails.isSessionEnd 
+                        ? "bg-slate-600/50 text-slate-400" 
+                        : "bg-green-500/20 text-green-400"
+                    }`}>
+                      {sessionDetails.isSessionEnd ? "Ended" : "Active"}
+                    </span>
                   </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-              <MessageSquare className="w-12 h-12 text-slate-500 mb-4" />
-              <p className="text-slate-300 mb-2">No messages in this session</p>
-              <p className="text-slate-400 text-sm">
-                This session doesn't contain any chat messages
-              </p>
+              
+              {/* Session Metadata */}
+              <div className="flex items-center space-x-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-400">
+                    {formatDate(sessionDetails.sessionStartAt)}
+                  </span>
+                </div>
+                {sessionDetails.sessionEndAt && (
+                  <div className="flex items-center space-x-2">
+                    <XCircle className="w-4 h-4 text-slate-400" />
+                    <span className="text-slate-400">
+                      {formatDate(sessionDetails.sessionEndAt)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Session Info Footer */}
-        <div className="p-4 border-t border-slate-700 bg-slate-800/30">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-slate-400">User: </span>
-              <span className="text-white">{sessionDetails.user || "Unknown"}</span>
-            </div>
-            <div>
-              <span className="text-slate-400">Ticket Created: </span>
-              <span className={`${sessionDetails.isTicketCreated ? 'text-green-400' : 'text-slate-400'}`}>
-                {sessionDetails.isTicketCreated ? "Yes" : "No"}
-              </span>
-            </div>
-            {sessionDetails.ticketId && (
-              <div className="col-span-2">
-                <span className="text-slate-400">Ticket ID: </span>
-                <span className="text-white">{sessionDetails.ticketId}</span>
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {loadingDetails ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+              </div>
+            ) : sessionDetails.chats && sessionDetails.chats.length > 0 ? (
+              <div className="max-w-4xl mx-auto space-y-6">
+                {sessionDetails.chats.map((chat: any) => (
+                  <div key={chat.id} className="space-y-4">
+                    {/* User Message - Grok Style */}
+                    <div className="flex justify-end">
+                      <div className="max-w-2xl bg-amber-400/10 border border-amber-400/20 rounded-2xl px-4 py-3">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <UserIcon className="w-4 h-4 text-amber-400" />
+                          <span className="text-xs font-medium text-amber-400">You</span>
+                        </div>
+                        <div className="text-white text-sm leading-relaxed">
+                          {formatMessage(chat.question)}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-2">
+                          {formatDate(chat.time)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AI Response - Grok Style */}
+                    <div className="flex justify-start">
+                      <div className="max-w-2xl bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Bot className="w-4 h-4 text-amber-400" />
+                          <span className="text-xs font-medium text-amber-400">AI Assistant</span>
+                        </div>
+                        <div className="text-white text-sm leading-relaxed">
+                          {formatMessage(chat.agent_response)}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-2">
+                          {formatDate(chat.time)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                <MessageSquare className="w-12 h-12 text-slate-500 mb-4" />
+                <p className="text-slate-300 mb-2">No messages in this session</p>
+                <p className="text-slate-400 text-sm">
+                  This session doesn't contain any chat messages
+                </p>
               </div>
             )}
+          </div>
+
+          {/* Session Info Footer */}
+          <div className="bg-slate-800/30 border-t border-slate-700 p-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <UserIcon className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-400">User: </span>
+                  <span className="text-white">{sessionDetails.user || "Unknown"}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Ticket className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-400">Ticket: </span>
+                  <span className={`${sessionDetails.isTicketCreated ? 'text-green-400' : 'text-slate-400'}`}>
+                    {sessionDetails.isTicketCreated ? (
+                      <span className="flex items-center">
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Created
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <XCircle className="w-4 h-4 mr-1" />
+                        Not Created
+                      </span>
+                    )}
+                  </span>
+                </div>
+                {sessionDetails.ticketId && (
+                  <div className="flex items-center space-x-2">
+                    <Ticket className="w-4 h-4 text-slate-400" />
+                    <span className="text-slate-400">Ticket ID: </span>
+                    <span className="text-white font-mono text-xs">{sessionDetails.ticketId}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
+  // Sessions List View
   if (loading && sessions.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -269,45 +386,80 @@ const SessionsTab: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-slate-800/50 backdrop-blur-lg">
-      <div className="p-4 border-b border-slate-700">
-        <h2 className="text-lg font-semibold text-white">Your Sessions</h2>
-        <p className="text-sm text-slate-400">
-          Select a session to view details and chat messages
-        </p>
+    <div className="h-full flex bg-slate-900">
+      {/* Collapsible Sidebar */}
+      <div className={`${sidebarCollapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-slate-800/50 border-r border-slate-700 flex flex-col`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+          {!sidebarCollapsed && (
+            <h3 className="text-white font-medium">Your Sessions</h3>
+          )}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 text-slate-400" />
+            )}
+          </button>
+        </div>
+
+        {/* Sessions List */}
+        <div className="flex-1 overflow-y-auto">
+          {sessions.map((session) => (
+            <button
+              key={session.session_id}
+              onClick={() =>
+                session.session_id && handleSessionClick(session.session_id)
+              }
+              className="w-full text-left p-4 border-b border-slate-700 hover:bg-slate-700/50 transition-colors"
+            >
+              {sidebarCollapsed ? (
+                <div className="flex justify-center">
+                  <MessageSquare className="w-5 h-5 text-slate-400" />
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium text-white truncate flex-1">
+                      {session.question && session.question.length > 50
+                        ? session.question.substring(0, 50) + "..."
+                        : session.question ?? ""}
+                    </h3>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        session.status === "active"
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-slate-600/50 text-slate-400"
+                      }`}
+                    >
+                      {session.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center text-xs text-slate-400">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {session.created_at ? formatDate(session.created_at) : ""}
+                  </div>
+                </>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {sessions.map((session) => (
-          <button
-            key={session.session_id}
-            onClick={() =>
-              session.session_id && handleSessionClick(session.session_id)
-            }
-            className="w-full text-left p-4 border-b border-slate-700 hover:bg-slate-700/50 transition-colors"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-medium text-white truncate flex-1">
-                {session.question && session.question.length > 50
-                  ? session.question.substring(0, 50) + "..."
-                  : session.question ?? ""}
-              </h3>
-              <span
-                className={`text-xs px-2 py-1 rounded-full ${
-                  session.status === "active"
-                    ? "bg-green-500/20 text-green-400"
-                    : "bg-slate-600/50 text-slate-400"
-                }`}
-              >
-                {session.status}
-              </span>
-            </div>
-            <div className="flex items-center text-xs text-slate-400">
-              <Clock className="w-3 h-3 mr-1" />
-              {session.created_at ? formatDate(session.created_at) : ""}
-            </div>
-          </button>
-        ))}
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        <div className="p-8 flex items-center justify-center h-full">
+          <div className="text-center">
+            <MessageSquare className="w-16 h-16 text-slate-500 mb-4 mx-auto" />
+            <h2 className="text-xl font-medium text-white mb-2">Select a Session</h2>
+            <p className="text-slate-400">
+              Choose a session from the sidebar to view the conversation
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
