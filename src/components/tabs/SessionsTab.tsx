@@ -6,16 +6,12 @@ import { useChat } from "../../contexts/ChatContext";
 import { 
   Clock, 
   MessageSquare, 
-  User, 
   Bot, 
   Send,
-  Plus,
   Calendar,
-  Ticket,
   User as UserIcon,
-  CheckCircle,
-  XCircle,
-  ArrowRight
+  History,
+  Search
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -28,6 +24,8 @@ const SessionsTab: React.FC = () => {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { setCurrentSession, loadSessionMessages } = useChat();
@@ -113,6 +111,7 @@ const SessionsTab: React.FC = () => {
       });
 
       loadSessionMessages(messages);
+      setShowHistory(false);
     } catch (err) {
       console.error("Error loading session details:", err);
       setError("Failed to load session details. Please try again.");
@@ -203,6 +202,10 @@ const SessionsTab: React.FC = () => {
     });
   };
 
+  const filteredSessions = sessions.filter(session =>
+    (session.question || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Loading state
   if (loading && sessions.length === 0) {
     return (
@@ -228,98 +231,81 @@ const SessionsTab: React.FC = () => {
     );
   }
 
-  // No sessions state
-  if (sessions.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-        <MessageSquare className="w-12 h-12 text-slate-500 mb-4" />
-        <p className="text-slate-300 mb-2">No sessions found</p>
-        <p className="text-slate-400 text-sm">
-          Start a new chat to create a session
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full flex bg-slate-900">
-      {/* Sessions List Sidebar */}
+      {/* Grok-style Left Sidebar */}
       <div className="w-80 bg-slate-800/50 border-r border-slate-700 flex flex-col">
-        {/* Header */}
+        {/* Search Bar */}
         <div className="p-4 border-b border-slate-700">
-          <h3 className="text-white font-medium">Your Sessions</h3>
-          <p className="text-slate-400 text-sm mt-1">Click to view conversations</p>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search sessions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-amber-400"
+            />
+          </div>
         </div>
 
-        {/* Sessions List */}
+        {/* History Section */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {sessions.map((session) => (
-            <button
-              key={session.session_id}
-              onClick={() => session.session_id && handleSessionClick(session.session_id)}
-              className={`w-full text-left p-4 border-b border-slate-700 hover:bg-slate-700/50 transition-colors ${
-                selectedSession?.session_id === session.session_id ? 'bg-amber-400/10 border-amber-400/20' : ''
-              }`}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-medium text-white truncate flex-1">
-                  {session.question && session.question.length > 50
-                    ? session.question.substring(0, 50) + "..."
-                    : session.question ?? ""}
-                </h3>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${
-                    session.status === "active"
-                      ? "bg-green-500/20 text-green-400"
-                      : "bg-slate-600/50 text-slate-400"
-                  }`}
-                >
-                  {session.status}
-                </span>
+          <div className="p-4">
+            <div className="flex items-center space-x-2 mb-4">
+              <History className="w-5 h-5 text-amber-400" />
+              <h3 className="text-white font-medium">History</h3>
+            </div>
+            
+            {filteredSessions.length === 0 ? (
+              <div className="text-center py-8">
+                <MessageSquare className="w-8 h-8 text-slate-500 mx-auto mb-2" />
+                <p className="text-slate-400 text-sm">No sessions found</p>
               </div>
-              <div className="flex items-center text-xs text-slate-400">
-                <Clock className="w-3 h-3 mr-1" />
-                {session.created_at ? formatDate(session.created_at) : ""}
+            ) : (
+              <div className="space-y-2">
+                {filteredSessions.map((session) => (
+                  <button
+                    key={session.session_id}
+                    onClick={() => session.session_id && handleSessionClick(session.session_id)}
+                    className={`w-full text-left p-3 rounded-lg hover:bg-slate-700/50 transition-colors ${
+                      selectedSession?.session_id === session.session_id ? 'bg-amber-400/10 border border-amber-400/20' : ''
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="font-medium text-white truncate flex-1 text-sm">
+                        {session.question && session.question.length > 40
+                          ? session.question.substring(0, 40) + "..."
+                          : session.question ?? ""}
+                      </h4>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ml-2 ${
+                          session.status === "active"
+                            ? "bg-green-500/20 text-green-400"
+                            : "bg-slate-600/50 text-slate-400"
+                        }`}
+                      >
+                        {session.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-xs text-slate-400">
+                      <Clock className="w-3 h-3 mr-1" />
+                      {session.created_at ? formatDate(session.created_at) : ""}
+                    </div>
+                  </button>
+                ))}
               </div>
-            </button>
-          ))}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Main Chat Area */}
+      {/* Main Chat Area - Grok Style */}
       <div className="flex-1 flex flex-col">
         {selectedSession && sessionDetails ? (
           <>
-            {/* Chat Header */}
-            <div className="bg-slate-800/50 border-b border-slate-700 p-4 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-medium text-white">Session Chat</h2>
-                  <div className="flex items-center space-x-4 text-sm text-slate-400">
-                    <span>ID: {sessionDetails.sessionId}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      sessionDetails.isSessionEnd 
-                        ? "bg-slate-600/50 text-slate-400" 
-                        : "bg-green-500/20 text-green-400"
-                    }`}>
-                      {sessionDetails.isSessionEnd ? "Ended" : "Active"}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-4 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-400">
-                      {formatDate(sessionDetails.sessionStartAt)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar min-h-0" style={{ maxHeight: 'calc(100vh - 240px)' }}>
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar min-h-0" style={{ maxHeight: 'calc(100vh - 200px)' }}>
               <AnimatePresence>
                 {loadingDetails ? (
                   <div className="flex items-center justify-center h-full">
@@ -443,47 +429,46 @@ const SessionsTab: React.FC = () => {
               <div className="max-w-4xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="flex items-center space-x-2">
-                    <UserIcon className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-400">User: </span>
-                    <span className="text-white">{sessionDetails.user || "Unknown"}</span>
+                    <span className="text-slate-400">Session: </span>
+                    <span className="text-white font-mono text-xs">{sessionDetails.sessionId}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Ticket className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-400">Ticket: </span>
-                    <span className={`${sessionDetails.isTicketCreated ? 'text-green-400' : 'text-slate-400'}`}>
-                      {sessionDetails.isTicketCreated ? (
-                        <span className="flex items-center">
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          Created
-                        </span>
-                      ) : (
-                        <span className="flex items-center">
-                          <XCircle className="w-4 h-4 mr-1" />
-                          Not Created
-                        </span>
-                      )}
+                    <span className="text-slate-400">Status: </span>
+                    <span className={`${sessionDetails.isSessionEnd ? 'text-slate-400' : 'text-green-400'}`}>
+                      {sessionDetails.isSessionEnd ? "Ended" : "Active"}
                     </span>
                   </div>
-                  {sessionDetails.ticketId && (
-                    <div className="flex items-center space-x-2">
-                      <Ticket className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-400">Ticket ID: </span>
-                      <span className="text-white font-mono text-xs">{sessionDetails.ticketId}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-slate-400" />
+                    <span className="text-slate-400">
+                      {formatDate(sessionDetails.sessionStartAt)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </>
         ) : (
-          // Default state when no session is selected
+          // Default state when no session is selected - Grok style
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <MessageSquare className="w-16 h-16 text-slate-500 mb-4 mx-auto" />
-              <h2 className="text-xl font-medium text-white mb-2">Select a Session</h2>
-              <p className="text-slate-400">
-                Choose a session from the sidebar to view the conversation
+            <div className="text-center max-w-2xl mx-auto px-8">
+              <div className="w-16 h-16 bg-amber-400/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <MessageSquare className="w-8 h-8 text-amber-400" />
+              </div>
+              <h2 className="text-2xl font-medium text-white mb-4">Welcome to Your Chat History</h2>
+              <p className="text-slate-400 mb-8 leading-relaxed">
+                Select a conversation from the history to continue where you left off, or start a new chat to begin a fresh conversation.
               </p>
+              <div className="flex items-center justify-center space-x-4 text-sm text-slate-500">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span>Active sessions</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
+                  <span>Ended sessions</span>
+                </div>
+              </div>
             </div>
           </div>
         )}

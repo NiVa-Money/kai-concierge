@@ -8,6 +8,7 @@ import { auth } from "../contexts/firebaseConfig";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
 
+
 // const PORT = import.meta.env.VITE_API_PORT || 5002;
 
 // const API_BASE_URL = `${BASE_URL}:${PORT}`;
