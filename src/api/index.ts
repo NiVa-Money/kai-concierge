@@ -52,22 +52,36 @@ export interface EndSessionPayload {
 }
 
 export interface SessionResponse {
-  ticketId(arg0: string, ticketId: any): unknown;
-  content: string;
-  session_id: string;
-  user_id: string;
-  question: string;
+  _id?: string;              // From API
+  sessionId?: string;        // Raw API field (keep for mapping)
+  session_id?: string;       // UI-friendly field
+  userId?: string;           // Raw API field
+  user_id?: string;          // UI-friendly field
+  isSessionEnd?: boolean;    // From API
+  isTicketCreated?: boolean; // From API
+  ticketId?: string | null;  // From API
+  chats?: Array<{
+    time: string;
+    id: string;
+    question: string;
+    agent_response: string;
+  }>;
+  question?: string;
+  persona?: string;
   ai_persona?: string;
-  persona: string;
-  created_at: string;
+  sessionStartAt?: string;   // Raw API field
+  sessionEndAt?: string;     // Raw API field
+  created_at?: string;       // UI-friendly field
   updated_at?: string;
-  status: string;
+  status?: 'active' | 'ended';
+  user?: string;             // From API
   messages?: Array<{
-    role: string;
+    role: 'user' | 'ai';
     content: string;
     timestamp: string;
   }>;
 }
+
 
 export interface UserResponse {
   name: string;
@@ -81,6 +95,7 @@ export interface Ticket {
   ticket_id: string;
   client_message: string;
   service_type: string;
+
   client_contact: Record<string, any>;
   priority: string;
   status: string;
@@ -218,7 +233,14 @@ export const getSessionDetails = (sessionId: string) =>
   api.get<{ data: SessionResponse }>(`/api/v1/sessions/${sessionId}`);
 
 export const getUserSessions = (userId: string) =>
-  api.get<{ data: SessionResponse[] }>(`/api/v1/sessions/user/${userId}`);
+  api.get<{ 
+    data: { 
+      sessions: SessionResponse[];
+      count: number;
+      total_count: number;
+      has_more: boolean;
+    }
+  }>(`/api/v1/sessions/user/${userId}`);
 
 // Tickets
 export const getAllTickets = () =>
