@@ -51,6 +51,24 @@ export interface EndSessionPayload {
   reason: string;
 }
 
+export interface SessionResponse {
+  ticketId(arg0: string, ticketId: any): unknown;
+  content: string;
+  session_id: string;
+  user_id: string;
+  question: string;
+  ai_persona?: string;
+  persona: string;
+  created_at: string;
+  updated_at?: string;
+  status: string;
+  messages?: Array<{
+    role: string;
+    content: string;
+    timestamp: string;
+  }>;
+}
+
 export interface UserResponse {
   name: string;
   age: number;
@@ -191,10 +209,16 @@ export const handleGoogleAuth = async (): Promise<{
 
 // Session
 export const createOrUpdateSession = (data: SessionPayload) =>
-  api.post("/api/v1/sessions/", data);
+  api.post<{ data: SessionResponse }>("/api/v1/sessions/", data);
 
 export const endSession = (sessionId: string, data: EndSessionPayload) =>
-  api.post(`/api/v1/sessions/${sessionId}/end/`, data);
+  api.post<{ data: SessionResponse }>(`/api/v1/sessions/${sessionId}/end/`, data);
+
+export const getSessionDetails = (sessionId: string) =>
+  api.get<{ data: SessionResponse }>(`/api/v1/sessions/${sessionId}`);
+
+export const getUserSessions = (userId: string) =>
+  api.get<{ data: SessionResponse[] }>(`/api/v1/sessions/user/${userId}`);
 
 // Tickets
 export const getAllTickets = () =>

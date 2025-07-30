@@ -1,7 +1,7 @@
  
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
-import { createOrUpdateSession, endSession } from "../../api";
+import { createOrUpdateSession, endSession, getSessionDetails } from "../../api";
 import {
   Send,
   Plane,
@@ -42,6 +42,37 @@ const ChatTab: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
+  
+  // Load existing session if available
+  useEffect(() => {
+    const loadExistingSession = async () => {
+      const savedSessionId = localStorage.getItem('currentSessionId');
+      if (savedSessionId && userId) {
+        try {
+          const response = await getSessionDetails(savedSessionId);
+          const sessionData = response.data.data;
+          setSessionId(sessionData.session_id);
+          
+          // Load messages if available
+          if (sessionData.messages && sessionData.messages.length > 0) {
+            const formattedMessages = sessionData.messages.map((msg: any) => ({
+              id: msg.id || Date.now().toString() + Math.random().toString(),
+              sender: msg.role === 'user' ? 'user' : 'agent',
+              content: msg.content,
+              timestamp: new Date(msg.timestamp),
+            }));
+            setMessages(formattedMessages);
+          }
+        } catch (error) {
+          console.error('Error loading saved session:', error);
+          // Clear invalid session
+          localStorage.removeItem('currentSessionId');
+        }
+      }
+    };
+    
+    loadExistingSession();
+  }, [userId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,16 +101,19 @@ const ChatTab: React.FC = () => {
       const agentMsg = {
         id: Date.now().toString() + "-agent",
         sender: "agent",
-        content: res.data.agentResponse,
+        content: res.data.data.content || "I've processed your request.",
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, agentMsg]);
-      setSessionId(res.data.sessionId);
+      setSessionId(res.data.data.session_id);
       setIsTyping(false);
 
-      if (res.data.sessionEnd) {
-        console.log("Session ended. Ticket ID:", res.data.ticketId);
+      // Store session in localStorage for persistence
+      localStorage.setItem('currentSessionId', res.data.data.session_id);
+
+      if (res.data.data.status === 'completed') {
+        console.log("Session ended. Ticket ID:", res.data.data.ticketId);
       }
     } catch (error: any) {
       console.error("API error:", error?.response?.data || error.message);
@@ -96,6 +130,7 @@ const ChatTab: React.FC = () => {
       });
       setSessionId(null);
       setMessages([]);
+      localStorage.removeItem('currentSessionId');
     } catch (error) {
       console.error("Error ending session:", error);
     }
@@ -174,16 +209,19 @@ const ChatTab: React.FC = () => {
       const agentMsg = {
         id: Date.now().toString() + "-agent",
         sender: "agent",
-        content: res.data.agentResponse,
+        content: res.data.data.content || "I've processed your request.",
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, agentMsg]);
-      setSessionId(res.data.sessionId);
+      setSessionId(res.data.data.session_id);
       setIsTyping(false);
+      
+      // Store session in localStorage for persistence
+      localStorage.setItem('currentSessionId', res.data.data.session_id);
 
-      if (res.data.sessionEnd) {
-        console.log("Session ended. Ticket ID:", res.data.ticketId);
+      if (res.data.data.status === 'completed') {
+        console.log("Session ended.");
       }
     } catch (error: any) {
       console.error("API error:", error?.response?.data || error.message);

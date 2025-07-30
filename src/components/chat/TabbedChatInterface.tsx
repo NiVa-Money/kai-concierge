@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Menu, X, ChevronRight, MessageSquare, Brain, User } from "lucide-react";
+import { Menu, X, ChevronRight, MessageSquare, Brain, User, History } from "lucide-react";
 import TabNavigation from "../ui/TabNavigation";
 import PredictiveTab from "../tabs/PredictiveTab";
 import ChatTab from "../tabs/ChatTab";
 import ProfileTab from "../tabs/ProfileTab";
+import SessionsTab from "../tabs/SessionsTab";
 
 const TabbedChatInterface: React.FC = () => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -19,6 +20,8 @@ const TabbedChatInterface: React.FC = () => {
         return <PredictiveTab />;
       case "chat":
         return <ChatTab />;
+      case "sessions":
+        return <SessionsTab />;
       case "profile":
         return <ProfileTab />;
       default:
@@ -28,6 +31,7 @@ const TabbedChatInterface: React.FC = () => {
 
   const sidebarTabs = [
     { id: 'chat', icon: <MessageSquare className="w-5 h-5" />, label: 'Chat' },
+    { id: 'sessions', icon: <History className="w-5 h-5" />, label: 'Sessions' },
     { id: 'predictive', icon: <Brain className="w-5 h-5" />, label: 'Predictive' },
     { id: 'profile', icon: <User className="w-5 h-5" />, label: 'Profile' }
   ];
