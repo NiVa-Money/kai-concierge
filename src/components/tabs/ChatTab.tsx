@@ -49,7 +49,7 @@ const ChatTab: React.FC = () => {
       const savedSessionId = localStorage.getItem('currentSessionId');
       if (savedSessionId && userId) {
         try {
-          const response = await getSessionDetails(savedSessionId);
+          const response = await getSessionDetails(savedSessionId, userId);
           const sessionData = response.data.data;
           setSessionId(sessionData.session_id);
           

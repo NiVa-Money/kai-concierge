@@ -229,8 +229,11 @@ export const createOrUpdateSession = (data: SessionPayload) =>
 export const endSession = (sessionId: string, data: EndSessionPayload) =>
   api.post<{ data: SessionResponse }>(`/api/v1/sessions/${sessionId}/end/`, data);
 
-export const getSessionDetails = (sessionId: string) =>
-  api.get<{ data: SessionResponse }>(`/api/v1/sessions/${sessionId}`);
+export const getSessionDetails = (sessionId: string, userId?: string) => {
+  const params = userId ? { user_id: userId } : {};
+  console.log("getSessionDetails called with:", { sessionId, userId, params });
+  return api.get<{ data: SessionResponse }>(`/api/v1/sessions/${sessionId}`, { params });
+};
 
 export const getUserSessions = (userId: string) =>
   api.get<{ 
