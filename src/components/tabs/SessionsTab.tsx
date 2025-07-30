@@ -1,22 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
-import { getUserSessions, getSessionDetails, SessionResponse } from "../../api";
+import React, { useEffect, useState, useRef } from "react";
+import { getUserSessions, getSessionDetails, createOrUpdateSession, SessionResponse } from "../../api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useChat } from "../../contexts/ChatContext";
 import { 
   Clock, 
   MessageSquare, 
-  ArrowLeft, 
   User, 
   Bot, 
-  ChevronLeft,
-  ChevronRight,
+  Send,
+  Plus,
   Calendar,
   Ticket,
   User as UserIcon,
   CheckCircle,
-  XCircle
+  XCircle,
+  ArrowRight
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const SessionsTab: React.FC = () => {
   const [sessions, setSessions] = useState<SessionResponse[]>([]);
@@ -25,9 +26,22 @@ const SessionsTab: React.FC = () => {
   const [selectedSession, setSelectedSession] = useState<SessionResponse | null>(null);
   const [sessionDetails, setSessionDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { setCurrentSession, loadSessionMessages } = useChat();
+
+  const userId = localStorage.getItem("userId");
+  const aiPersona = JSON.parse(localStorage.getItem("aiPersona") || "{}");
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [sessionDetails]);
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -36,7 +50,6 @@ const SessionsTab: React.FC = () => {
       try {
         setLoading(true);
         const response = await getUserSessions(user.user_id);
-        // response.data.data.sessions is SessionResponse[]
         const mappedSessions = (response.data.data.sessions as SessionResponse[])
           .filter((s) => s.sessionId && s.userId && s.sessionStartAt)
           .map((s) => ({
@@ -108,10 +121,60 @@ const SessionsTab: React.FC = () => {
     }
   };
 
-  const handleBackToSessions = () => {
-    setSelectedSession(null);
-    setSessionDetails(null);
-    setCurrentSession(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || !userId || !selectedSession) return;
+
+    const userMsg = {
+      id: Date.now().toString(),
+      sender: "user",
+      content: input,
+      timestamp: new Date(),
+    };
+
+    // Add user message to session details
+    if (sessionDetails) {
+      setSessionDetails((prev: any) => ({
+        ...prev,
+        chats: [...(prev.chats || []), {
+          id: userMsg.id,
+          question: input,
+          agent_response: "",
+          time: new Date().toISOString()
+        }]
+      }));
+    }
+
+    setInput("");
+    setIsTyping(true);
+
+    try {
+      const res = await createOrUpdateSession({
+        userId,
+        sessionId: selectedSession.session_id,
+        question: input,
+        persona: JSON.stringify(aiPersona),
+      });
+
+      const agentResponse = res?.data?.agentResponse || "I've processed your request.";
+
+      // Add AI response to session details
+      if (sessionDetails) {
+        setSessionDetails((prev: any) => ({
+          ...prev,
+          chats: prev.chats.map((chat: any, index: number) => 
+            index === prev.chats.length - 1 
+              ? { ...chat, agent_response: agentResponse }
+              : chat
+          )
+        }));
+      }
+
+      setIsTyping(false);
+    } catch (err) {
+      console.error("Error sending message:", err);
+      setIsTyping(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -140,216 +203,7 @@ const SessionsTab: React.FC = () => {
     });
   };
 
-  // Grok-style Chat Interface
-  if (selectedSession && sessionDetails) {
-    return (
-      <div className="h-full flex bg-slate-900">
-        {/* Collapsible Sidebar */}
-        <div className={`${sidebarCollapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-slate-800/50 border-r border-slate-700 flex flex-col`}>
-          {/* Sidebar Header */}
-          <div className="p-4 border-b border-slate-700 flex items-center justify-between">
-            {!sidebarCollapsed && (
-              <h3 className="text-white font-medium">Sessions</h3>
-            )}
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-            >
-              {sidebarCollapsed ? (
-                <ChevronRight className="w-4 h-4 text-slate-400" />
-              ) : (
-                <ChevronLeft className="w-4 h-4 text-slate-400" />
-              )}
-            </button>
-          </div>
-
-          {/* Sessions List */}
-          <div className="flex-1 overflow-y-auto">
-            {sessions.map((session) => (
-              <button
-                key={session.session_id}
-                onClick={() => session.session_id && handleSessionClick(session.session_id)}
-                className={`w-full text-left p-3 border-b border-slate-700 hover:bg-slate-700/50 transition-colors ${
-                  selectedSession?.session_id === session.session_id ? 'bg-amber-400/10 border-amber-400/20' : ''
-                }`}
-              >
-                {sidebarCollapsed ? (
-                  <div className="flex justify-center">
-                    <MessageSquare className="w-5 h-5 text-slate-400" />
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex justify-between items-start mb-1">
-                      <h4 className="font-medium text-white truncate flex-1 text-sm">
-                        {session.question && session.question.length > 30
-                          ? session.question.substring(0, 30) + "..."
-                          : session.question ?? ""}
-                      </h4>
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ml-2 ${
-                          session.status === "active"
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-slate-600/50 text-slate-400"
-                        }`}
-                      >
-                        {session.status}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-xs text-slate-400">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {session.created_at ? formatDate(session.created_at) : ""}
-                    </div>
-                  </>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Chat Header */}
-          <div className="bg-slate-800/50 border-b border-slate-700 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={handleBackToSessions}
-                  className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5 text-slate-400" />
-                </button>
-                <div>
-                  <h2 className="text-lg font-medium text-white">Session Chat</h2>
-                  <div className="flex items-center space-x-4 text-sm text-slate-400">
-                    <span>ID: {sessionDetails.sessionId}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      sessionDetails.isSessionEnd 
-                        ? "bg-slate-600/50 text-slate-400" 
-                        : "bg-green-500/20 text-green-400"
-                    }`}>
-                      {sessionDetails.isSessionEnd ? "Ended" : "Active"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Session Metadata */}
-              <div className="flex items-center space-x-4 text-sm">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-400">
-                    {formatDate(sessionDetails.sessionStartAt)}
-                  </span>
-                </div>
-                {sessionDetails.sessionEndAt && (
-                  <div className="flex items-center space-x-2">
-                    <XCircle className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-400">
-                      {formatDate(sessionDetails.sessionEndAt)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-6">
-            {loadingDetails ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
-              </div>
-            ) : sessionDetails.chats && sessionDetails.chats.length > 0 ? (
-              <div className="max-w-4xl mx-auto space-y-6">
-                {sessionDetails.chats.map((chat: any) => (
-                  <div key={chat.id} className="space-y-4">
-                    {/* User Message - Grok Style */}
-                    <div className="flex justify-end">
-                      <div className="max-w-2xl bg-amber-400/10 border border-amber-400/20 rounded-2xl px-4 py-3">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <UserIcon className="w-4 h-4 text-amber-400" />
-                          <span className="text-xs font-medium text-amber-400">You</span>
-                        </div>
-                        <div className="text-white text-sm leading-relaxed">
-                          {formatMessage(chat.question)}
-                        </div>
-                        <div className="text-xs text-slate-400 mt-2">
-                          {formatDate(chat.time)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* AI Response - Grok Style */}
-                    <div className="flex justify-start">
-                      <div className="max-w-2xl bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Bot className="w-4 h-4 text-amber-400" />
-                          <span className="text-xs font-medium text-amber-400">AI Assistant</span>
-                        </div>
-                        <div className="text-white text-sm leading-relaxed">
-                          {formatMessage(chat.agent_response)}
-                        </div>
-                        <div className="text-xs text-slate-400 mt-2">
-                          {formatDate(chat.time)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-                <MessageSquare className="w-12 h-12 text-slate-500 mb-4" />
-                <p className="text-slate-300 mb-2">No messages in this session</p>
-                <p className="text-slate-400 text-sm">
-                  This session doesn't contain any chat messages
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Session Info Footer */}
-          <div className="bg-slate-800/30 border-t border-slate-700 p-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="flex items-center space-x-2">
-                  <UserIcon className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-400">User: </span>
-                  <span className="text-white">{sessionDetails.user || "Unknown"}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Ticket className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-400">Ticket: </span>
-                  <span className={`${sessionDetails.isTicketCreated ? 'text-green-400' : 'text-slate-400'}`}>
-                    {sessionDetails.isTicketCreated ? (
-                      <span className="flex items-center">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Created
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        <XCircle className="w-4 h-4 mr-1" />
-                        Not Created
-                      </span>
-                    )}
-                  </span>
-                </div>
-                {sessionDetails.ticketId && (
-                  <div className="flex items-center space-x-2">
-                    <Ticket className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-400">Ticket ID: </span>
-                    <span className="text-white font-mono text-xs">{sessionDetails.ticketId}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Sessions List View
+  // Loading state
   if (loading && sessions.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -358,6 +212,7 @@ const SessionsTab: React.FC = () => {
     );
   }
 
+  // Error state
   if (error && sessions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-4 text-center">
@@ -373,6 +228,7 @@ const SessionsTab: React.FC = () => {
     );
   }
 
+  // No sessions state
   if (sessions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-4 text-center">
@@ -387,79 +243,250 @@ const SessionsTab: React.FC = () => {
 
   return (
     <div className="h-full flex bg-slate-900">
-      {/* Collapsible Sidebar */}
-      <div className={`${sidebarCollapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-slate-800/50 border-r border-slate-700 flex flex-col`}>
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-slate-700 flex items-center justify-between">
-          {!sidebarCollapsed && (
-            <h3 className="text-white font-medium">Your Sessions</h3>
-          )}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-          >
-            {sidebarCollapsed ? (
-              <ChevronRight className="w-4 h-4 text-slate-400" />
-            ) : (
-              <ChevronLeft className="w-4 h-4 text-slate-400" />
-            )}
-          </button>
+      {/* Sessions List Sidebar */}
+      <div className="w-80 bg-slate-800/50 border-r border-slate-700 flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b border-slate-700">
+          <h3 className="text-white font-medium">Your Sessions</h3>
+          <p className="text-slate-400 text-sm mt-1">Click to view conversations</p>
         </div>
 
         {/* Sessions List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
           {sessions.map((session) => (
             <button
               key={session.session_id}
-              onClick={() =>
-                session.session_id && handleSessionClick(session.session_id)
-              }
-              className="w-full text-left p-4 border-b border-slate-700 hover:bg-slate-700/50 transition-colors"
+              onClick={() => session.session_id && handleSessionClick(session.session_id)}
+              className={`w-full text-left p-4 border-b border-slate-700 hover:bg-slate-700/50 transition-colors ${
+                selectedSession?.session_id === session.session_id ? 'bg-amber-400/10 border-amber-400/20' : ''
+              }`}
             >
-              {sidebarCollapsed ? (
-                <div className="flex justify-center">
-                  <MessageSquare className="w-5 h-5 text-slate-400" />
-                </div>
-              ) : (
-                <>
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-medium text-white truncate flex-1">
-                      {session.question && session.question.length > 50
-                        ? session.question.substring(0, 50) + "..."
-                        : session.question ?? ""}
-                    </h3>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        session.status === "active"
-                          ? "bg-green-500/20 text-green-400"
-                          : "bg-slate-600/50 text-slate-400"
-                      }`}
-                    >
-                      {session.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center text-xs text-slate-400">
-                    <Clock className="w-3 h-3 mr-1" />
-                    {session.created_at ? formatDate(session.created_at) : ""}
-                  </div>
-                </>
-              )}
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-medium text-white truncate flex-1">
+                  {session.question && session.question.length > 50
+                    ? session.question.substring(0, 50) + "..."
+                    : session.question ?? ""}
+                </h3>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    session.status === "active"
+                      ? "bg-green-500/20 text-green-400"
+                      : "bg-slate-600/50 text-slate-400"
+                  }`}
+                >
+                  {session.status}
+                </span>
+              </div>
+              <div className="flex items-center text-xs text-slate-400">
+                <Clock className="w-3 h-3 mr-1" />
+                {session.created_at ? formatDate(session.created_at) : ""}
+              </div>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
-        <div className="p-8 flex items-center justify-center h-full">
-          <div className="text-center">
-            <MessageSquare className="w-16 h-16 text-slate-500 mb-4 mx-auto" />
-            <h2 className="text-xl font-medium text-white mb-2">Select a Session</h2>
-            <p className="text-slate-400">
-              Choose a session from the sidebar to view the conversation
-            </p>
+        {selectedSession && sessionDetails ? (
+          <>
+            {/* Chat Header */}
+            <div className="bg-slate-800/50 border-b border-slate-700 p-4 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-medium text-white">Session Chat</h2>
+                  <div className="flex items-center space-x-4 text-sm text-slate-400">
+                    <span>ID: {sessionDetails.sessionId}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      sessionDetails.isSessionEnd 
+                        ? "bg-slate-600/50 text-slate-400" 
+                        : "bg-green-500/20 text-green-400"
+                    }`}>
+                      {sessionDetails.isSessionEnd ? "Ended" : "Active"}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-4 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-slate-400" />
+                    <span className="text-slate-400">
+                      {formatDate(sessionDetails.sessionStartAt)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar min-h-0" style={{ maxHeight: 'calc(100vh - 240px)' }}>
+              <AnimatePresence>
+                {loadingDetails ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+                  </div>
+                ) : sessionDetails.chats && sessionDetails.chats.length > 0 ? (
+                  <div className="max-w-4xl mx-auto space-y-6">
+                    {sessionDetails.chats.map((chat: any) => (
+                      <div key={chat.id} className="space-y-4">
+                        {/* User Message */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex justify-end"
+                        >
+                          <div className="max-w-2xl bg-amber-400/10 border border-amber-400/20 rounded-2xl px-4 py-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <UserIcon className="w-4 h-4 text-amber-400" />
+                              <span className="text-xs font-medium text-amber-400">You</span>
+                            </div>
+                            <div className="text-white text-sm leading-relaxed">
+                              {formatMessage(chat.question)}
+                            </div>
+                            <div className="text-xs text-slate-400 mt-2">
+                              {formatDate(chat.time)}
+                            </div>
+                          </div>
+                        </motion.div>
+
+                        {/* AI Response */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex justify-start"
+                        >
+                          <div className="max-w-2xl bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Bot className="w-4 h-4 text-amber-400" />
+                              <span className="text-xs font-medium text-amber-400">AI Assistant</span>
+                            </div>
+                            <div className="text-white text-sm leading-relaxed">
+                              {formatMessage(chat.agent_response)}
+                            </div>
+                            <div className="text-xs text-slate-400 mt-2">
+                              {formatDate(chat.time)}
+                            </div>
+                          </div>
+                        </motion.div>
+                      </div>
+                    ))}
+
+                    {isTyping && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex justify-start"
+                      >
+                        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                          <div className="flex items-center space-x-2">
+                            <div className="flex space-x-1">
+                              <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"></div>
+                              <div
+                                className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
+                                style={{ animationDelay: "0.1s" }}
+                              ></div>
+                              <div
+                                className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
+                                style={{ animationDelay: "0.2s" }}
+                              ></div>
+                            </div>
+                            <span className="text-slate-400 text-sm">
+                              Your concierge is attending...
+                            </span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                    <MessageSquare className="w-12 h-12 text-slate-500 mb-4" />
+                    <p className="text-slate-300 mb-2">No messages in this session</p>
+                    <p className="text-slate-400 text-sm">
+                      This session doesn't contain any chat messages
+                    </p>
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Input Area - Only show for active sessions */}
+            {!sessionDetails.isSessionEnd && (
+              <div className="p-8 bg-slate-800/30 backdrop-blur-lg flex-shrink-0">
+                <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+                  <div className="relative">
+                    <div className="flex items-center space-x-3 bg-slate-900/50 border border-slate-700/50 rounded-xl p-3 hover:border-slate-600 transition-colors">
+                      <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="Continue the conversation..."
+                        className="flex-1 bg-transparent text-white placeholder-slate-400 focus:outline-none"
+                      />
+
+                      <button
+                        type="submit"
+                        disabled={!input.trim()}
+                        className="p-2 bg-amber-400 hover:bg-amber-500 disabled:bg-slate-700/50 disabled:text-slate-400 rounded-lg transition-colors"
+                      >
+                        <Send className="w-6 h-6" />
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Session Info Footer */}
+            <div className="bg-slate-800/30 border-t border-slate-700 p-4 flex-shrink-0">
+              <div className="max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <UserIcon className="w-4 h-4 text-slate-400" />
+                    <span className="text-slate-400">User: </span>
+                    <span className="text-white">{sessionDetails.user || "Unknown"}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Ticket className="w-4 h-4 text-slate-400" />
+                    <span className="text-slate-400">Ticket: </span>
+                    <span className={`${sessionDetails.isTicketCreated ? 'text-green-400' : 'text-slate-400'}`}>
+                      {sessionDetails.isTicketCreated ? (
+                        <span className="flex items-center">
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Created
+                        </span>
+                      ) : (
+                        <span className="flex items-center">
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Not Created
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  {sessionDetails.ticketId && (
+                    <div className="flex items-center space-x-2">
+                      <Ticket className="w-4 h-4 text-slate-400" />
+                      <span className="text-slate-400">Ticket ID: </span>
+                      <span className="text-white font-mono text-xs">{sessionDetails.ticketId}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          // Default state when no session is selected
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageSquare className="w-16 h-16 text-slate-500 mb-4 mx-auto" />
+              <h2 className="text-xl font-medium text-white mb-2">Select a Session</h2>
+              <p className="text-slate-400">
+                Choose a session from the sidebar to view the conversation
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

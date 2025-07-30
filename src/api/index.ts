@@ -53,34 +53,40 @@ export interface EndSessionPayload {
 
 export interface SessionResponse {
   _id?: string;              // From API
-  sessionId?: string;        // Raw API field (keep for mapping)
-  session_id?: string;       // UI-friendly field
-  userId?: string;           // Raw API field
-  user_id?: string;          // UI-friendly field
+  sessionId?: string;        // From API
+  session_id?: string;       // Alternative name (if needed)
+  userId?: string;           // From API
+  user_id?: string;          // Alternative name
   isSessionEnd?: boolean;    // From API
   isTicketCreated?: boolean; // From API
   ticketId?: string | null;  // From API
+  agentResponse?: string;    // From API
+  status?: 'active' | 'ended';
+  
+  // Chat messages
   chats?: Array<{
     time: string;
     id: string;
     question: string;
     agent_response: string;
   }>;
-  question?: string;
-  persona?: string;
-  ai_persona?: string;
-  sessionStartAt?: string;   // Raw API field
-  sessionEndAt?: string;     // Raw API field
-  created_at?: string;       // UI-friendly field
-  updated_at?: string;
-  status?: 'active' | 'ended';
-  user?: string;             // From API
+  
   messages?: Array<{
     role: 'user' | 'ai';
     content: string;
     timestamp: string;
   }>;
+
+  question?: string;
+  persona?: string;
+  ai_persona?: string;
+  sessionStartAt?: string;
+  sessionEndAt?: string;
+  created_at?: string;
+  updated_at?: string;
+  user?: string;
 }
+
 
 
 export interface UserResponse {
@@ -224,7 +230,12 @@ export const handleGoogleAuth = async (): Promise<{
 
 // Session
 export const createOrUpdateSession = (data: SessionPayload) =>
-  api.post<{ data: SessionResponse }>("/api/v1/sessions/", data);
+  api.post<{
+    agentResponse: string;
+    sessionId: any;
+    status: string;
+    ticketId(arg0: string, ticketId: any): unknown; data: SessionResponse 
+}>("/api/v1/sessions/", data);
 
 export const endSession = (sessionId: string, data: EndSessionPayload) =>
   api.post<{ data: SessionResponse }>(`/api/v1/sessions/${sessionId}/end/`, data);

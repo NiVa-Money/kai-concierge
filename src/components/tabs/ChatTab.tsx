@@ -42,8 +42,7 @@ const ChatTab: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
-  
-  // Load existing session if available
+
   useEffect(() => {
     const loadExistingSession = async () => {
       const savedSessionId = localStorage.getItem('currentSessionId');
@@ -51,9 +50,9 @@ const ChatTab: React.FC = () => {
         try {
           const response = await getSessionDetails(savedSessionId, userId);
           const sessionData = response.data.data;
-          setSessionId(sessionData.session_id);
-          
-          // Load messages if available
+          if (sessionData.sessionId) {
+            setSessionId(sessionData.sessionId);
+          }
           if (sessionData.messages && sessionData.messages.length > 0) {
             const formattedMessages = sessionData.messages.map((msg: any) => ({
               id: msg.id || Date.now().toString() + Math.random().toString(),
@@ -65,18 +64,16 @@ const ChatTab: React.FC = () => {
           }
         } catch (error) {
           console.error('Error loading saved session:', error);
-          // Clear invalid session
           localStorage.removeItem('currentSessionId');
         }
       }
     };
-    
+
     loadExistingSession();
   }, [userId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!input.trim() || !userId) return;
 
     const userMsg = {
@@ -98,25 +95,77 @@ const ChatTab: React.FC = () => {
         persona: JSON.stringify(aiPersona),
       });
 
+      const agentResponse =
+        res?.data?.agentResponse || "I've processed your request.";
+
       const agentMsg = {
         id: Date.now().toString() + "-agent",
         sender: "agent",
-        content: res.data.data.content || "I've processed your request.",
+        content: agentResponse,
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, agentMsg]);
-      setSessionId(res.data.data.session_id);
+      if (res?.data?.sessionId) {
+        setSessionId(res.data.sessionId);
+        localStorage.setItem('currentSessionId', res.data.sessionId);
+      }
       setIsTyping(false);
 
-      // Store session in localStorage for persistence
-      localStorage.setItem('currentSessionId', res.data.data.session_id);
-
-      if (res.data.data.status === 'completed') {
-        console.log("Session ended. Ticket ID:", res.data.data.ticketId);
+      if (res?.data?.status === 'ended') {
+        console.log("Session ended. Ticket ID:", res.data.ticketId);
       }
     } catch (error: any) {
-      console.error("API error:", error?.response?.data || error.message);
+      console.error("API error:", error, error?.response?.data || error.message);
+      setIsTyping(false);
+    }
+  };
+
+  const handleServiceClick = async (prompt: string) => {
+    if (!userId) return;
+
+    const userMsg = {
+      id: Date.now().toString(),
+      sender: "user",
+      content: prompt,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setIsTyping(true);
+
+    try {
+      const res = await createOrUpdateSession({
+        userId,
+        sessionId: sessionId ?? undefined,
+        question: prompt,
+        persona: JSON.stringify(aiPersona),
+      });
+
+      console.log(res);
+
+      const agentResponse =
+        res?.data?.agentResponse || "I've processed your request.";
+
+      const agentMsg = {
+        id: Date.now().toString() + "-agent",
+        sender: "agent",
+        content: agentResponse,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, agentMsg]);
+      if (res?.data?.sessionId) {
+        setSessionId(res.data.sessionId);
+        localStorage.setItem('currentSessionId', res.data.sessionId);
+      }
+      setIsTyping(false);
+
+      if (res?.data?.status === 'ended') {
+        console.log("Session ended.");
+      }
+    } catch (error: any) {
+      console.error("API error:", error, error?.response?.data || error.message);
       setIsTyping(false);
     }
   };
@@ -184,50 +233,6 @@ const ChatTab: React.FC = () => {
         "I'm planning an exclusive corporate event. Can you help me organize a high-end event with premium services?",
     },
   ];
-
-  const handleServiceClick = async (prompt: string) => {
-    if (!userId) return;
-
-    const userMsg = {
-      id: Date.now().toString(),
-      sender: "user",
-      content: prompt,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setIsTyping(true);
-
-    try {
-      const res = await createOrUpdateSession({
-        userId,
-        sessionId: sessionId ?? undefined,
-        question: prompt,
-        persona: JSON.stringify(aiPersona),
-      });
-
-      const agentMsg = {
-        id: Date.now().toString() + "-agent",
-        sender: "agent",
-        content: res.data.data.content || "I've processed your request.",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, agentMsg]);
-      setSessionId(res.data.data.session_id);
-      setIsTyping(false);
-      
-      // Store session in localStorage for persistence
-      localStorage.setItem('currentSessionId', res.data.data.session_id);
-
-      if (res.data.data.status === 'completed') {
-        console.log("Session ended.");
-      }
-    } catch (error: any) {
-      console.error("API error:", error?.response?.data || error.message);
-      setIsTyping(false);
-    }
-  };
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
