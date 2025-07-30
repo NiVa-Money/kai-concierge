@@ -5,6 +5,7 @@ import PredictiveTab from "../tabs/PredictiveTab";
 import ChatTab from "../tabs/ChatTab";
 import ProfileTab from "../tabs/ProfileTab";
 import SessionsTab from "../tabs/SessionsTab";
+import { useAuth } from "../../contexts/AuthContext";
 
 const TabbedChatInterface: React.FC = () => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -13,6 +14,7 @@ const TabbedChatInterface: React.FC = () => {
 
   const [showSidebar, setShowSidebar] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const { user } = useAuth();
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -32,8 +34,7 @@ const TabbedChatInterface: React.FC = () => {
   const sidebarTabs = [
     { id: 'chat', icon: <MessageSquare className="w-5 h-5" />, label: 'Chat' },
     { id: 'sessions', icon: <History className="w-5 h-5" />, label: 'Sessions' },
-    { id: 'predictive', icon: <Brain className="w-5 h-5" />, label: 'Predictive' },
-    { id: 'profile', icon: <User className="w-5 h-5" />, label: 'Profile' }
+    { id: 'predictive', icon: <Brain className="w-5 h-5" />, label: 'Predictive' }
   ];
 
   return (
@@ -66,13 +67,20 @@ const TabbedChatInterface: React.FC = () => {
           {sidebarExpanded ? (
             // Extended state - arrow in flex row
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center flex-shrink-0">
-                <User className="w-4 h-4 text-slate-900" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">Elite Member</p>
-                <p className="text-xs text-slate-400">Premium</p>
-              </div>
+              <button
+                onClick={() => setActiveTab("profile")}
+                className="flex items-center space-x-3 flex-1 hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
+              >
+                <div className="w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-slate-900" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">
+                    {user?.name || "Elite Member"}
+                  </p>
+                  <p className="text-xs text-slate-400">Premium</p>
+                </div>
+              </button>
               <button
                 onClick={() => setSidebarExpanded(!sidebarExpanded)}
                 className="w-8 h-8 bg-slate-700 hover:bg-slate-600 active:bg-slate-500 rounded-full flex items-center justify-center transition-all duration-200 border border-slate-600 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 group flex-shrink-0"
@@ -83,9 +91,12 @@ const TabbedChatInterface: React.FC = () => {
           ) : (
             // Collapsed state - arrow at bottom
             <div className="flex flex-col items-center space-y-4">
-              <div className="w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center">
+              <button
+                onClick={() => setActiveTab("profile")}
+                className="w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+              >
                 <User className="w-4 h-4 text-slate-900" />
-              </div>
+              </button>
               <button
                 onClick={() => setSidebarExpanded(!sidebarExpanded)}
                 className="w-8 h-8 bg-slate-700 hover:bg-slate-600 active:bg-slate-500 rounded-full flex items-center justify-center transition-all duration-200 border border-slate-600 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 group"
@@ -163,6 +174,8 @@ const TabbedChatInterface: React.FC = () => {
           </div>
         </div>
       )}
+
+
     </div>
   );
 };

@@ -21,8 +21,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
   const tabs: Tab[] = [
     { id: 'chat', label: 'Chat', icon: <MessageSquare className="w-5 h-5" /> },
     { id: 'sessions', label: 'Sessions', icon: <History className="w-5 h-5" /> },
-    { id: 'predictive', label: 'Predictive', icon: <Brain className="w-5 h-5" /> },
-    { id: 'profile', label: 'Profile', icon: <User className="w-5 h-5" /> }
+    { id: 'predictive', label: 'Predictive', icon: <Brain className="w-5 h-5" /> }
   ];
 
   if (layout === 'sidebar') {
