@@ -234,9 +234,9 @@ const SessionsTab: React.FC = () => {
   return (
     <div className="h-full flex bg-slate-900">
       {/* Grok-style Left Sidebar */}
-      <div className="w-80 bg-slate-800/50 border-r border-slate-700 flex flex-col">
+      <div className="w-80 bg-slate-800/50 border-r border-slate-700 flex flex-col h-full">
         {/* Search Bar */}
-        <div className="p-4 border-b border-slate-700">
+        <div className="p-4 border-b border-slate-700 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -250,7 +250,8 @@ const SessionsTab: React.FC = () => {
         </div>
 
         {/* History Section */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="overflow-y-auto max-h-[calc(100vh-80px)] custom-scrollbar">
+
           <div className="p-4">
             <div className="flex items-center space-x-2 mb-4">
               <History className="w-5 h-5 text-amber-400" />
@@ -314,7 +315,7 @@ const SessionsTab: React.FC = () => {
                 ) : sessionDetails.chats && sessionDetails.chats.length > 0 ? (
                   <div className="max-w-4xl mx-auto space-y-6">
                     {sessionDetails.chats.map((chat: any) => (
-                      <div key={chat.id} className="space-y-4">
+                      <div key={chat.id} className="space-y-8">
                         {/* User Message */}
                         <motion.div
                           initial={{ opacity: 0, y: 20 }}
