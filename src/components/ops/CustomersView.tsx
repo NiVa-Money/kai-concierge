@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getUserDashboard } from "../../api";
 import {
   MoreHorizontal,
   Star,
@@ -10,6 +11,8 @@ import {
   X,
   Search,
   Filter,
+  Clock,
+  Users,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -169,12 +172,44 @@ export default function CustomersView() {
     "overview" | "prefs" | "activity" | "ai"
   >("overview");
   const [selected, setSelected] = useState<(typeof customers)[0] | null>(null);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = customers.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.email.toLowerCase().includes(search.toLowerCase())
   );
+  
+  // Fetch dashboard data when a customer is selected
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!selected) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Use userId from localStorage
+        const userId = localStorage.getItem("userId");
+        if (!userId) {
+          setError("User ID not found in localStorage");
+          return;
+        }
+        
+        const response = await getUserDashboard(userId);
+        setDashboardData(response.data.data);
+      } catch (err: any) {
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to load customer dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [selected]);
 
   /* ---------------------------- RENDER ---------------------------- */
   return (
@@ -275,28 +310,70 @@ export default function CustomersView() {
 
               {/* Tab content */}
               {activeTab === "overview" && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {/* Card */}
-                  <Metric
-                    icon={<DollarSign className="h-4 w-4 text-green-400" />}
-                    label="Total Spent"
-                    value={selected.totalSpent}
-                  />
-                  <Metric
-                    icon={<Ticket className="h-4 w-4 text-blue-400" />}
-                    label="Active Tickets"
-                    value={selected.activeTickets}
-                  />
-                  <Metric
-                    icon={<Star className="h-4 w-4 text-yellow-400" />}
-                    label="Satisfaction"
-                    value={`${selected.satisfaction}/5`}
-                  />
-                  <Metric
-                    icon={<MessageSquare className="h-4 w-4 text-purple-400" />}
-                    label="Interactions"
-                    value={selected.interactions}
-                  />
+                <div>
+                  {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+                    </div>
+                  ) : error ? (
+                    <div className="text-center py-8">
+                      <p className="text-red-400 mb-2">{error}</p>
+                      <button 
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-amber-500 text-slate-900 rounded-lg text-sm font-medium hover:bg-amber-400 transition-colors"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : dashboardData ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <Metric
+                        icon={<DollarSign className="h-4 w-4 text-green-400" />}
+                        label="Total Spent"
+                        value={`$${dashboardData.total_spent?.toLocaleString() || '0'}`}
+                      />
+                      <Metric
+                        icon={<Ticket className="h-4 w-4 text-blue-400" />}
+                        label="Active Tickets"
+                        value={dashboardData.active_tickets || 0}
+                      />
+                      <Metric
+                        icon={<Star className="h-4 w-4 text-yellow-400" />}
+                        label="Satisfaction"
+                        value={`${dashboardData.satisfaction || 0}/5`}
+                      />
+                      <Metric
+                        icon={<Users className="h-4 w-4 text-purple-400" />}
+                        label="Interactions"
+                        value={dashboardData.total_sessions || 0}
+                      />
+                                         </div>
+                   ) : (
+                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                       {/* Fallback to dummy data if no API data */}
+                       <Metric
+                         icon={<DollarSign className="h-4 w-4 text-green-400" />}
+                         label="Total Spent"
+                         value={selected.totalSpent}
+                       />
+                       <Metric
+                         icon={<Ticket className="h-4 w-4 text-blue-400" />}
+                         label="Active Tickets"
+                         value={selected.activeTickets}
+                       />
+                       <Metric
+                         icon={<Star className="h-4 w-4 text-yellow-400" />}
+                         label="Satisfaction"
+                         value={`${selected.satisfaction}/5`}
+                       />
+                       <Metric
+                         icon={<MessageSquare className="h-4 w-4 text-purple-400" />}
+                         label="Interactions"
+                         value={selected.interactions}
+                       />
+                     </div>
+                   )}
+
                 </div>
               )}
 
@@ -334,45 +411,61 @@ export default function CustomersView() {
                 </div>
               )}
 
-              {activeTab === "activity" && (
-                <div className="space-y-4">
-                  {selected.recentActivity.map((a, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between p-4 bg-slate-700 rounded"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`p-2 rounded ${
-                            a.type === "ticket"
-                              ? "bg-blue-400/10"
-                              : "bg-purple-400/10"
-                          }`}
-                        >
-                          {a.type === "ticket" ? (
-                            <Ticket className="h-4 w-4 text-blue-400" />
-                          ) : (
-                            <MessageSquare className="h-4 w-4 text-purple-400" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-white">{a.title}</p>
-                          <p className="text-xs text-slate-400">{a.time}</p>
-                        </div>
-                      </div>
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          a.status === "active"
-                            ? "bg-amber-500/10 text-amber-400"
-                            : "bg-slate-500/10 text-slate-300"
-                        }`}
-                      >
-                        {a.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+{activeTab === "activity" && (
+  <div className="space-y-4">
+    {loading ? (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+      </div>
+    ) : error ? (
+      <div className="text-center py-8">
+        <p className="text-red-400 mb-2">{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-amber-500 text-slate-900 rounded-lg text-sm font-medium hover:bg-amber-400 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    ) : dashboardData?.recent_activity ? (
+      <div className="space-y-4">
+        {dashboardData.recent_activity.slice(0, 4).map((activity: any, i: number) => (
+          <div
+            key={activity._id || i}
+            className="flex items-center justify-between p-4 bg-slate-700 rounded"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded bg-blue-400/10">
+                <Ticket className="h-4 w-4 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-white">{activity.title}</p>
+                <p className="text-xs text-slate-400">
+                  {new Date(activity.created_at).toLocaleDateString()}{" "}
+                  {new Date(activity.created_at).toLocaleTimeString()}
+                </p>
+              </div>
+            </div>
+            <span
+              className={`text-xs px-2 py-1 rounded-full ${
+                activity.status === "in_progress" || activity.status === "active"
+                  ? "bg-amber-500/10 text-amber-400"
+                  : activity.status === "pending"
+                  ? "bg-yellow-500/10 text-yellow-400"
+                  : "bg-slate-500/10 text-slate-300"
+              }`}
+            >
+              {activity.status}
+            </span>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p className="text-slate-400">No recent activity found.</p>
+    )}
+  </div>
+)}
+
 
               {activeTab === "ai" && (
                 <div className="space-y-4">
