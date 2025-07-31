@@ -160,6 +160,13 @@ export interface GoogleSignInResponse {
   user_id: string;
 }
 
+export interface StorePersonaPayload {
+  userId: string;
+  platform: string;
+  username: string;
+  profileData: any;
+}
+
 // =======================
 // API Functions
 // =======================
@@ -417,3 +424,7 @@ export const deleteUserById = (userId: string) =>
 
 export const getUserDashboard = (userId: string) =>
   api.get<{ data: any }>(`/api/v1/users/${userId}/dashboard`);
+
+// Store Persona API
+export const storePersona = (data: StorePersonaPayload) =>
+  api.post<{ data: { persona_id: string } }>("/api/v1/personas/", data);

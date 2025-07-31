@@ -7,12 +7,13 @@ import {
   scrapeTwitter,
   generatePersona,
 } from "../../api/persona";
+import { storePersona } from "../../api";
 import { Instagram, Linkedin, Twitter, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { User } from "../../types";
 
 const SocialSetup: React.FC = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, isLoading } = useAuth();
   const [handles, setHandles] = useState({
     instagram: "",
     linkedin: "",
@@ -23,6 +24,28 @@ const SocialSetup: React.FC = () => {
   const [connected, setConnected] = useState<Record<string, boolean>>({});
 
   const navigate = useNavigate();
+  
+  // Debug: Log user state
+  console.log("SocialSetup - User state:", user);
+  console.log("SocialSetup - User social handles:", user?.socialHandles);
+  
+  // Show loading state while user is being loaded
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if no user
+  if (!user) {
+    navigate("/login", { replace: true });
+    return null;
+  }
   const handleConnect = async (
     platform: "instagram" | "linkedin" | "twitter"
   ) => {
@@ -76,6 +99,21 @@ const SocialSetup: React.FC = () => {
       console.log("AI Persona generated:", aiPersona);
       localStorage.setItem("aiPersona", JSON.stringify(aiPersona));
 
+      // Store persona in API with social media information
+      if (user?.user_id) {
+        try {
+          await storePersona({
+            userId: user.user_id,
+            platform: platform,
+            username: username,
+            profileData: aiPersona,
+          });
+          console.log("✅ Persona stored in API successfully");
+        } catch (error) {
+          console.error("❌ Failed to store persona in API:", error);
+        }
+      }
+
       updateUser({
         socialHandles: handles,
         personaReport: aiPersona,
@@ -89,12 +127,18 @@ const SocialSetup: React.FC = () => {
     }
   };
 
+  // Only redirect if user has completed social setup and has a persona
   if (
     user?.socialHandles?.instagram ||
     user?.socialHandles?.linkedin ||
     user?.socialHandles?.twitter
   ) {
-    return null;
+    // Check if user already has a persona, if so redirect to chat
+    const aiPersona = localStorage.getItem("aiPersona");
+    if (aiPersona) {
+      navigate("/chat", { replace: true });
+      return null;
+    }
   }
 
   const inputStyle =
