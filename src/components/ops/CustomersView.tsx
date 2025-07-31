@@ -1,14 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from "react";
 import {
-  useState,
-  useEffect,
-  Key,
-  ReactElement,
-  JSXElementConstructor,
-  ReactNode,
-  ReactPortal,
-} from "react";
-import { getUserDashboard, getAllUsers, getUserPersonas } from "../../api";
+  getUserDashboard,
+  getAllUsers,
+  getUserPersonas,
+  getPersonaRecommendations,
+} from "../../api";
 import {
   Star,
   DollarSign,
@@ -20,157 +17,6 @@ import {
   X,
 } from "lucide-react";
 
-/* ------------------------------------------------------------------ */
-/*                         DUMMY DATA (unchanged)                      */
-/* ------------------------------------------------------------------ */
-// const customers = [
-//   {
-//     id: "CUST-001",
-//     name: "Naresh Jhawar",
-//     email: "naresh@botwot.io",
-//     phone: "9000090009",
-//     location: "Mumbai, India",
-//     tier: "Platinum",
-//     totalSpent: "$125,000",
-//     activeTickets: 6,
-//     joinDate: "Jan 2024",
-//     lastInteraction: "2 hours ago",
-//     satisfaction: 4.9,
-//     interactions: 47,
-//     preferences: {
-//       likes: [
-//         "Luxury Travel",
-//         "Fine Dining",
-//         "Concert Tickets",
-//         "Private Jets",
-//       ],
-//       dislikes: ["Crowded Places", "Budget Options", "Long Waits"],
-//     },
-//     aiRecommendations: [
-//       "Premium yacht charter for upcoming anniversary",
-//       "Michelin-star restaurant reservations in Tokyo",
-//       "VIP box seats for upcoming tennis tournaments",
-//     ],
-//     recentActivity: [
-//       {
-//         type: "ticket",
-//         title: "Book 2 tickets for The Weeknd",
-//         status: "active",
-//         time: "2 h ago",
-//       },
-//       {
-//         type: "ticket",
-//         title: "Boxing show in London",
-//         status: "active",
-//         time: "3 h ago",
-//       },
-//       {
-//         type: "interaction",
-//         title: "Called re: yacht charter",
-//         status: "done",
-//         time: "1 d ago",
-//       },
-//       {
-//         type: "ticket",
-//         title: "Private jet to Dubai",
-//         status: "done",
-//         time: "2 d ago",
-//       },
-//     ],
-//   },
-//   {
-//     id: "CUST-002",
-//     name: "Priya Sharma",
-//     email: "priya.sharma@gmail.com",
-//     phone: "9876543210",
-//     location: "Delhi, India",
-//     tier: "Gold",
-//     totalSpent: "$75,000",
-//     activeTickets: 2,
-//     joinDate: "Mar 2024",
-//     lastInteraction: "1 day ago",
-//     satisfaction: 4.7,
-//     interactions: 23,
-//     preferences: {
-//       likes: [
-//         "Art Galleries",
-//         "Wine Tasting",
-//         "Spa Treatments",
-//         "Cultural Events",
-//       ],
-//       dislikes: ["Loud Music", "Spicy Food", "Late-night events"],
-//     },
-//     aiRecommendations: [
-//       "Private art-gallery tour in Paris",
-//       "Exclusive wine tasting in Tuscany",
-//       "Luxury spa retreat in Bali",
-//     ],
-//     recentActivity: [
-//       {
-//         type: "ticket",
-//         title: "Spa weekend booking",
-//         status: "active",
-//         time: "1 d ago",
-//       },
-//       {
-//         type: "interaction",
-//         title: "Asked about art auction",
-//         status: "done",
-//         time: "3 d ago",
-//       },
-//     ],
-//   },
-//   {
-//     id: "CUST-003",
-//     name: "Robert Chen",
-//     email: "robert.chen@techcorp.com",
-//     phone: "555-0123",
-//     location: "San Francisco, USA",
-//     tier: "Diamond",
-//     totalSpent: "$250,000",
-//     activeTickets: 1,
-//     joinDate: "Dec 2023",
-//     lastInteraction: "30 min ago",
-//     satisfaction: 5.0,
-//     interactions: 89,
-//     preferences: {
-//       likes: [
-//         "Tech Events",
-//         "Mountain Sports",
-//         "Craft Cocktails",
-//         "Modern Architecture",
-//       ],
-//       dislikes: [
-//         "Formal Dress Codes",
-//         "Traditional Cuisine",
-//         "Beach Vacations",
-//       ],
-//     },
-//     aiRecommendations: [
-//       "Exclusive tech-conference access in Vegas",
-//       "Helicopter skiing in Swiss Alps",
-//       "Private architectural tours in Barcelona",
-//     ],
-//     recentActivity: [
-//       {
-//         type: "ticket",
-//         title: "CES 2025 VIP access",
-//         status: "active",
-//         time: "30 m ago",
-//       },
-//       {
-//         type: "ticket",
-//         title: "Ski resort in Aspen",
-//         status: "done",
-//         time: "1 w ago",
-//       },
-//     ],
-//   },
-// ];
-
-/* ------------------------------------------------------------------ */
-/*                               VIEW                                 */
-/* ------------------------------------------------------------------ */
 export default function CustomersView() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<
@@ -182,6 +28,7 @@ export default function CustomersView() {
   const [error, setError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<any[]>([]);
   const [personaData, setPersonaData] = useState<any[]>([]);
+  const [aiRecommendations, setAiRecommendations] = useState<any[]>([]);
 
   const filtered = customers.filter(
     (c) =>
@@ -228,15 +75,19 @@ export default function CustomersView() {
       try {
         const userId = selected._id;
 
-        const [dashboardRes, personaRes] = await Promise.all([
+        const [dashboardRes, personaRes, recoRes] = await Promise.all([
           getUserDashboard(userId),
           getUserPersonas(userId),
+          getPersonaRecommendations(userId),
         ]);
 
         setDashboardData(dashboardRes.data.data);
 
         const personas = personaRes.data?.data?.personas || [];
         setPersonaData(personas);
+
+        const recommendations = recoRes.data?.data?.recommendations || [];
+        setAiRecommendations(recommendations);
       } catch (err: any) {
         console.error("Error fetching customer data:", err);
         setError("Failed to load customer data");
@@ -611,30 +462,56 @@ export default function CustomersView() {
               )}
 
               {activeTab === "ai" && (
-                <div className="space-y-4">
-                  {selected.aiRecommendations.map(
-                    (
-                      r:
-                        | string
-                        | number
-                        | boolean
-                        | ReactElement<any, string | JSXElementConstructor<any>>
-                        | Iterable<ReactNode>
-                        | ReactPortal
-                        | null
-                        | undefined,
-                      i: Key | null | undefined
-                    ) => (
+                <div className="max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                  {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+                    </div>
+                  ) : aiRecommendations.length === 0 ? (
+                    <p className="text-slate-400">
+                      No AI recommendations available.
+                    </p>
+                  ) : (
+                    aiRecommendations.map((r, i) => (
                       <div
                         key={i}
-                        className="flex items-center justify-between p-4 bg-slate-700 rounded"
+                        className="p-4 bg-slate-700 rounded space-y-2 border border-slate-600"
                       >
-                        <p className="text-white">{r}</p>
-                        <button className="text-xs bg-transparent border border-amber-500 text-amber-400 px-3 py-1 rounded hover:bg-amber-500 hover:text-white transition">
-                          Create Ticket
-                        </button>
+                        <h3 className="text-lg text-white font-semibold">
+                          {r.title}
+                        </h3>
+                        <p className="text-slate-300 text-sm">
+                          {r.description}
+                        </p>
+                        <div className="text-xs text-slate-400">
+                          <p>
+                            <strong>Category:</strong> {r.category}
+                          </p>
+
+                          <p>
+                            <strong>Cost:</strong> {r.estimated_cost}
+                          </p>
+
+                          <p>
+                            <strong>Confidence:</strong>{" "}
+                            {(r.confidence_score * 100).toFixed(1)}%
+                          </p>
+                        </div>
+                        <p className="text-amber-400 text-sm italic">
+                          {r.reasoning}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {r.tags.map((tag: string, index: number) => (
+                            <span
+                              key={index}
+                              className="bg-amber-500/10 text-amber-400 text-xs px-2 py-1 rounded"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    )
+                    ))
                   )}
                 </div>
               )}

@@ -457,6 +457,10 @@ export const storePersona = (data: StorePersonaPayload) =>
 export const getUserPersonas = (userId: string) =>
   api.get<{ data: any }>(`/api/v1/personas/user/${userId}`);
 
+// Get persona recommendations for a user
+export const getPersonaRecommendations = (userId: string) =>
+  api.get<{ data: any }>(`/api/v1/personas/recommendations/${userId}`);
+
 export const getAllUsers = () =>
   api.get<{
     success: boolean;
