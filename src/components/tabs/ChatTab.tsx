@@ -215,27 +215,30 @@ const ChatTab: React.FC = () => {
                   </div>
                 ) : (
                   recommendations.length > 0 && (
-                    <div className="w-full max-w-7xl px-4 flex flex-wrap justify-center gap-4">
-                      {recommendations.slice(0, 6).map((r, i) => (
+                    <div className="w-full max-w-4xl px-4 grid grid-cols-2 gap-3">
+                      {recommendations.slice(0, 4).map((r, i) => (
                         <motion.div
                           key={i}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.03 }}
-                          className="flex flex-col w-[300px] bg-slate-800 border border-slate-700 rounded-xl p-4 shadow hover:shadow-amber-500/20 transition-all"
+                          transition={{ delay: i * 0.05 }}
+                          whileHover={{ 
+                            scale: 1.02, 
+                            y: -2,
+                            transition: { duration: 0.2, ease: "easeOut" }
+                          }}
+                          className="bg-slate-800/60 border border-slate-700/50 rounded-lg p-3 shadow-sm hover:shadow-amber-500/20 hover:shadow-lg transition-all duration-300 hover:border-amber-400/30 hover:bg-slate-800/80 backdrop-blur-sm group cursor-pointer"
                         >
-                          <h3 className="text-base font-semibold text-white mb-1">
+                          <h3 className="text-sm font-medium text-white mb-1 line-clamp-1 group-hover:text-amber-300 transition-colors duration-300">
                             {r.title}
                           </h3>
 
-                          <p className="text-sm text-slate-400 mb-2">
+                          <p className="text-xs text-slate-400 line-clamp-2 mb-2 group-hover:text-slate-300 transition-colors duration-300">
                             {r.reasoning}
                           </p>
 
-                          <div className="text-xs text-slate-400 space-y-1 mb-2">
-                            <p>
-                              <strong>Cost:</strong> {r.estimated_cost}
-                            </p>
+                          <div className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors duration-300">
+                            <span className="font-medium">Cost:</span> {r.estimated_cost}
                           </div>
                         </motion.div>
                       ))}
