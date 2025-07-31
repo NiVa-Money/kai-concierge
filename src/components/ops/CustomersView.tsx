@@ -17,7 +17,6 @@ import {
   Heart,
   X,
   Search,
-  Filter,
   Users,
 } from "lucide-react";
 
@@ -199,9 +198,9 @@ export default function CustomersView() {
 
       try {
         // Use userId from localStorage
-        const userId = localStorage.getItem("userId");
+        const userId = selected._id;
         if (!userId) {
-          setError("User ID not found in localStorage");
+          setError("User ID not found in selected user");
           return;
         }
 
@@ -222,7 +221,27 @@ export default function CustomersView() {
     const fetchCustomers = async () => {
       try {
         const res = await getAllUsers();
-        setCustomers(res.data.data.users);
+        const transformed = res.data.data.users.map((user: any, i: number) => ({
+          ...user,
+          id: user.user_id || `user-${i}`,
+          name: user.name || "Unnamed",
+          email: user.email || "N/A",
+          phone: user.phone || "N/A",
+          location: user.location || "—",
+          tier: "Gold",
+          totalSpent: "$0",
+          activeTickets: 0,
+          satisfaction: 0,
+          interactions: 0,
+          lastInteraction: "—",
+          aiRecommendations: [],
+          preferences: {
+            likes: [],
+            dislikes: [],
+          },
+          recentActivity: [],
+        }));
+        setCustomers(transformed);
       } catch (err) {
         console.error("Failed to fetch users", err);
       }
@@ -262,9 +281,6 @@ export default function CustomersView() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button className="flex items-center gap-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded text-slate-400 hover:border-amber-400">
-              <Filter className="h-4 w-4" />
-            </button>
           </div>
 
           {filtered.map((c) => (
@@ -280,9 +296,6 @@ export default function CustomersView() {
             >
               <h3 className="text-white font-semibold">{c.name}</h3>
               <p className="text-sm text-slate-400">{c.email}</p>
-              <div className="text-xs text-slate-500">
-                {c.activeTickets} active tickets • {c.lastInteraction}
-              </div>
             </div>
           ))}
         </div>
@@ -310,7 +323,7 @@ export default function CustomersView() {
               <div className="flex gap-6 border-b border-slate-700">
                 {[
                   ["overview", "Overview"],
-                  ["prefs", "Preferences"],
+                  ["prefs", "Persona"],
                   ["activity", "Activity"],
                   ["ai", "AI Insights"],
                 ].map(([val, label]) => (
