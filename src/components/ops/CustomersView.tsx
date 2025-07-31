@@ -269,7 +269,7 @@ export default function CustomersView() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ▸ List ---------------------------------------------------- */}
-        <div className="space-y-4">
+        <div className="space-y-4 h-[calc(100vh-210px)] overflow-y-auto pr-1 custom-scrollbar">
           {/* Search + Filter (simple) */}
           <div className="flex gap-2">
             <div className="relative flex-1">
