@@ -13,42 +13,9 @@ import {
   User,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getAllTickets } from "../../api";
+import { getAllTickets, getOperationalDashboard } from "../../api";
 
-const customerInsights = [
-  {
-    title: "Daily Active Users",
-    value: "47",
-    change: "+12%",
-    trend: "up",
-    icon: Users,
-    description: "vs. yesterday",
-  },
-  {
-    title: "Customer Satisfaction",
-    value: "4.8",
-    change: "+0.2",
-    trend: "up",
-    icon: TrendingUp,
-    description: "/5.0 rating",
-  },
-  {
-    title: "Avg. Ticket Value",
-    value: "$2,847",
-    change: "+8%",
-    trend: "up",
-    icon: Clock,
-    description: "vs. last week",
-  },
-  {
-    title: "Completion Rate",
-    value: "94%",
-    change: "-2%",
-    trend: "down",
-    icon: CheckCircle,
-    description: "this month",
-  },
-];
+// This will be replaced with dynamic data from API
 
 const quickActions = [
   {
@@ -139,6 +106,8 @@ export default function DashboardView() {
     completed: number;
     cancelled: number;
   } | null>(null);
+  const [operationalData, setOperationalData] = useState<any>(null);
+  const [operationalLoading, setOperationalLoading] = useState(false);
 
   const fetchTickets = async () => {
     try {
@@ -175,8 +144,22 @@ export default function DashboardView() {
     }
   };
 
+  const fetchOperationalData = async () => {
+    try {
+      setOperationalLoading(true);
+      const res = await getOperationalDashboard();
+      setOperationalData(res.data.data);
+    } catch (error) {
+      console.error("Failed to fetch operational data:", error);
+      setOperationalData(null);
+    } finally {
+      setOperationalLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchTickets();
+    fetchOperationalData();
   }, []);
 
   const statusCounts = {
@@ -272,36 +255,101 @@ export default function DashboardView() {
           <h2 className="text-xl font-semibold mb-4 text-white">
             Customer Insights
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {customerInsights.map((insight) => (
-              <div
-                key={insight.title}
-                className="p-6 bg-slate-800 rounded-md border border-slate-700 shadow-md"
-              >
+          {operationalLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-6 bg-slate-800 rounded-md border border-slate-700 shadow-md animate-pulse">
+                  <div className="h-4 bg-slate-700 rounded mb-3"></div>
+                  <div className="h-6 bg-slate-700 rounded mb-2"></div>
+                  <div className="h-8 bg-slate-700 rounded"></div>
+                </div>
+              ))}
+            </div>
+          ) : operationalData ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Daily Active Users */}
+              <div className="p-6 bg-slate-800 rounded-md border border-slate-700 shadow-md">
                 <div className="flex items-center justify-between mb-3">
                   <div className="p-2 bg-slate-700 rounded-lg">
-                    <insight.icon className="h-5 w-5 text-amber-400" />
+                    <Users className="h-5 w-5 text-amber-400" />
                   </div>
                   <span
                     className={`text-sm font-semibold ${
-                      insight.trend === "up" ? "text-green-400" : "text-red-400"
+                      operationalData.daily_active_users.trend === "up" ? "text-green-400" : "text-red-400"
                     }`}
                   >
-                    {insight.change}
+                    {operationalData.daily_active_users.percent_change > 0 ? "+" : ""}{operationalData.daily_active_users.percent_change}%
                   </span>
                 </div>
-                <p className="text-sm text-slate-400">{insight.title}</p>
+                <p className="text-sm text-slate-400">Daily Active Users</p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-bold text-white">
-                    {insight.value}
+                    {operationalData.daily_active_users.today}
                   </span>
-                  <span className="text-sm text-slate-400">
-                    {insight.description}
-                  </span>
+                  <span className="text-sm text-slate-400">vs. yesterday</span>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {/* Customer Satisfaction */}
+              <div className="p-6 bg-slate-800 rounded-md border border-slate-700 shadow-md">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-2 bg-slate-700 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <span className="text-sm font-semibold text-green-400">
+                    {operationalData.customer_satisfaction.total_rated} rated
+                  </span>
+                </div>
+                <p className="text-sm text-slate-400">Customer Satisfaction</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-white">
+                    {operationalData.customer_satisfaction.average.toFixed(1)}
+                  </span>
+                  <span className="text-sm text-slate-400">/5.0 rating</span>
+                </div>
+              </div>
+
+              {/* Avg. Ticket Value */}
+              <div className="p-6 bg-slate-800 rounded-md border border-slate-700 shadow-md">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-2 bg-slate-700 rounded-lg">
+                    <Clock className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <span className="text-sm font-semibold text-slate-400">
+                    {operationalData.avg_ticket_value.total_with_budget} with budget
+                  </span>
+                </div>
+                <p className="text-sm text-slate-400">Avg. Ticket Value</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-white">
+                    ${operationalData.avg_ticket_value.average.toFixed(0)}
+                  </span>
+                  <span className="text-sm text-slate-400">average</span>
+                </div>
+              </div>
+
+              {/* Completion Rate */}
+              <div className="p-6 bg-slate-800 rounded-md border border-slate-700 shadow-md">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-2 bg-slate-700 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <span className="text-sm font-semibold text-green-400">
+                    {operationalData.completion_rate.completed} completed
+                  </span>
+                </div>
+                <p className="text-sm text-slate-400">Completion Rate</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-white">
+                    {operationalData.completion_rate.rate.toFixed(1)}%
+                  </span>
+                  <span className="text-sm text-slate-400">of {operationalData.completion_rate.total} total</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center text-slate-400">Failed to load insights</div>
+          )}
         </div>
 
         {/* Content Section */}
@@ -341,13 +389,13 @@ export default function DashboardView() {
                         <span className="text-xs text-slate-400">
                           Progress:{" "}
                           <span className="text-blue-400">
-                            {ticket.progress?.stageId}%
+                            {ticket.progress && ticket.progress.length > 0 ? ticket.progress.length : 0}%
                           </span>
                         </span>
                         <div className="w-full bg-slate-600 h-1 rounded mt-1">
                           <div
                             className="h-1 bg-blue-400 rounded transition-all"
-                            style={{ width: `${ticket.progress}%` }}
+                            style={{ width: `${ticket.progress && ticket.progress.length > 0 ? (ticket.progress.length / 5) * 100 : 0}%` }}
                           />
                         </div>
                       </div>

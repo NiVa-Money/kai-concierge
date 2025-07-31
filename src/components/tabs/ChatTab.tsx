@@ -157,6 +157,57 @@ const ChatTab: React.FC = () => {
     }
   };
 
+  const handleCardClick = async (recommendation: any) => {
+    if (!userId) return;
+
+    const userMsg = {
+      id: Date.now().toString(),
+      sender: "user",
+      content: recommendation.title,
+      timestamp: new Date(),
+    };
+
+    setMessages([userMsg]);
+    setIsTyping(true);
+
+    try {
+      const res = await createOrUpdateSession({
+        userId,
+        sessionId: undefined, // Start new session
+        question: recommendation.title,
+        persona: JSON.stringify(aiPersona),
+      });
+
+      const agentResponse =
+        res?.data?.agentResponse || "I've processed your request.";
+
+      const agentMsg = {
+        id: Date.now().toString() + "-agent",
+        sender: "agent",
+        content: agentResponse,
+        timestamp: new Date(),
+      };
+
+      setMessages([userMsg, agentMsg]);
+      if (res?.data?.sessionId) {
+        setSessionId(res.data.sessionId);
+        localStorage.setItem("currentSessionId", res.data.sessionId);
+      }
+      setIsTyping(false);
+
+      if (res?.data?.status === "ended") {
+        console.log("Session ended. Ticket ID:", res.data.ticketId);
+      }
+    } catch (error: any) {
+      console.error(
+        "API error:",
+        error,
+        error?.response?.data || error.message
+      );
+      setIsTyping(false);
+    }
+  };
+
   const formatMessage = (content: string) => {
     return content.split("\n").map((line, index) =>
       line.startsWith("•") ? (
@@ -227,6 +278,8 @@ const ChatTab: React.FC = () => {
                             y: -2,
                             transition: { duration: 0.2, ease: "easeOut" }
                           }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleCardClick(r)}
                           className="bg-slate-800/60 border border-slate-700/50 rounded-lg p-3 shadow-sm hover:shadow-amber-500/20 hover:shadow-lg transition-all duration-300 hover:border-amber-400/30 hover:bg-slate-800/80 backdrop-blur-sm group cursor-pointer"
                         >
                           <h3 className="text-sm font-medium text-white mb-1 line-clamp-1 group-hover:text-amber-300 transition-colors duration-300">

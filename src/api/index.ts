@@ -461,6 +461,71 @@ export const getUserPersonas = (userId: string) =>
 export const getPersonaRecommendations = (userId: string) =>
   api.get<{ data: any }>(`/api/v1/personas/recommendations/${userId}`);
 
+export const getOperationalDashboard = () =>
+  api.get<{
+    data: {
+      daily_active_users: {
+        today: number;
+        yesterday: number;
+        percent_change: number;
+        trend: "up" | "down";
+      };
+      customer_satisfaction: {
+        average: number;
+        total_rated: number;
+        total_completed: number;
+      };
+      avg_ticket_value: {
+        average: number;
+        total_with_budget: number;
+        total_tickets: number;
+      };
+      completion_rate: {
+        rate: number;
+        completed: number;
+        total: number;
+      };
+      active_customers: {
+        count: number;
+        open_tickets: number;
+      };
+      avg_response_time: {
+        average_minutes: number;
+        average_seconds: number;
+        total_with_response_time: number;
+        total_tickets: number;
+      };
+      recent_tickets: Array<{
+        ticket_id: string;
+        description: string;
+        status: string;
+        created_at: string;
+        user: any;
+        estimated_budget: string | null;
+        satisfaction: number | null;
+      }>;
+      ticket_status_breakdown: {
+        total: number;
+        breakdown: {
+          completed: {
+            count: number;
+            percentage: number;
+          };
+          pending: {
+            count: number;
+            percentage: number;
+          };
+          in_progress: {
+            count: number;
+            percentage: number;
+          };
+        };
+      };
+      total_tickets: number;
+      total_users: number;
+    };
+  }>("/api/v1/dashboard/operational");
+
 export const getAllUsers = () =>
   api.get<{
     success: boolean;
