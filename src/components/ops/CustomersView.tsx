@@ -1,8 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
-import { getUserDashboard } from "../../api";
 import {
-  MoreHorizontal,
+  useState,
+  useEffect,
+  Key,
+  ReactElement,
+  JSXElementConstructor,
+  ReactNode,
+  ReactPortal,
+} from "react";
+import { getUserDashboard, getAllUsers } from "../../api";
+import {
   Star,
   DollarSign,
   Ticket,
@@ -11,157 +18,156 @@ import {
   X,
   Search,
   Filter,
-  Clock,
   Users,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /*                         DUMMY DATA (unchanged)                      */
 /* ------------------------------------------------------------------ */
-const customers = [
-  {
-    id: "CUST-001",
-    name: "Naresh Jhawar",
-    email: "naresh@botwot.io",
-    phone: "9000090009",
-    location: "Mumbai, India",
-    tier: "Platinum",
-    totalSpent: "$125,000",
-    activeTickets: 6,
-    joinDate: "Jan 2024",
-    lastInteraction: "2 hours ago",
-    satisfaction: 4.9,
-    interactions: 47,
-    preferences: {
-      likes: [
-        "Luxury Travel",
-        "Fine Dining",
-        "Concert Tickets",
-        "Private Jets",
-      ],
-      dislikes: ["Crowded Places", "Budget Options", "Long Waits"],
-    },
-    aiRecommendations: [
-      "Premium yacht charter for upcoming anniversary",
-      "Michelin-star restaurant reservations in Tokyo",
-      "VIP box seats for upcoming tennis tournaments",
-    ],
-    recentActivity: [
-      {
-        type: "ticket",
-        title: "Book 2 tickets for The Weeknd",
-        status: "active",
-        time: "2 h ago",
-      },
-      {
-        type: "ticket",
-        title: "Boxing show in London",
-        status: "active",
-        time: "3 h ago",
-      },
-      {
-        type: "interaction",
-        title: "Called re: yacht charter",
-        status: "done",
-        time: "1 d ago",
-      },
-      {
-        type: "ticket",
-        title: "Private jet to Dubai",
-        status: "done",
-        time: "2 d ago",
-      },
-    ],
-  },
-  {
-    id: "CUST-002",
-    name: "Priya Sharma",
-    email: "priya.sharma@gmail.com",
-    phone: "9876543210",
-    location: "Delhi, India",
-    tier: "Gold",
-    totalSpent: "$75,000",
-    activeTickets: 2,
-    joinDate: "Mar 2024",
-    lastInteraction: "1 day ago",
-    satisfaction: 4.7,
-    interactions: 23,
-    preferences: {
-      likes: [
-        "Art Galleries",
-        "Wine Tasting",
-        "Spa Treatments",
-        "Cultural Events",
-      ],
-      dislikes: ["Loud Music", "Spicy Food", "Late-night events"],
-    },
-    aiRecommendations: [
-      "Private art-gallery tour in Paris",
-      "Exclusive wine tasting in Tuscany",
-      "Luxury spa retreat in Bali",
-    ],
-    recentActivity: [
-      {
-        type: "ticket",
-        title: "Spa weekend booking",
-        status: "active",
-        time: "1 d ago",
-      },
-      {
-        type: "interaction",
-        title: "Asked about art auction",
-        status: "done",
-        time: "3 d ago",
-      },
-    ],
-  },
-  {
-    id: "CUST-003",
-    name: "Robert Chen",
-    email: "robert.chen@techcorp.com",
-    phone: "555-0123",
-    location: "San Francisco, USA",
-    tier: "Diamond",
-    totalSpent: "$250,000",
-    activeTickets: 1,
-    joinDate: "Dec 2023",
-    lastInteraction: "30 min ago",
-    satisfaction: 5.0,
-    interactions: 89,
-    preferences: {
-      likes: [
-        "Tech Events",
-        "Mountain Sports",
-        "Craft Cocktails",
-        "Modern Architecture",
-      ],
-      dislikes: [
-        "Formal Dress Codes",
-        "Traditional Cuisine",
-        "Beach Vacations",
-      ],
-    },
-    aiRecommendations: [
-      "Exclusive tech-conference access in Vegas",
-      "Helicopter skiing in Swiss Alps",
-      "Private architectural tours in Barcelona",
-    ],
-    recentActivity: [
-      {
-        type: "ticket",
-        title: "CES 2025 VIP access",
-        status: "active",
-        time: "30 m ago",
-      },
-      {
-        type: "ticket",
-        title: "Ski resort in Aspen",
-        status: "done",
-        time: "1 w ago",
-      },
-    ],
-  },
-];
+// const customers = [
+//   {
+//     id: "CUST-001",
+//     name: "Naresh Jhawar",
+//     email: "naresh@botwot.io",
+//     phone: "9000090009",
+//     location: "Mumbai, India",
+//     tier: "Platinum",
+//     totalSpent: "$125,000",
+//     activeTickets: 6,
+//     joinDate: "Jan 2024",
+//     lastInteraction: "2 hours ago",
+//     satisfaction: 4.9,
+//     interactions: 47,
+//     preferences: {
+//       likes: [
+//         "Luxury Travel",
+//         "Fine Dining",
+//         "Concert Tickets",
+//         "Private Jets",
+//       ],
+//       dislikes: ["Crowded Places", "Budget Options", "Long Waits"],
+//     },
+//     aiRecommendations: [
+//       "Premium yacht charter for upcoming anniversary",
+//       "Michelin-star restaurant reservations in Tokyo",
+//       "VIP box seats for upcoming tennis tournaments",
+//     ],
+//     recentActivity: [
+//       {
+//         type: "ticket",
+//         title: "Book 2 tickets for The Weeknd",
+//         status: "active",
+//         time: "2 h ago",
+//       },
+//       {
+//         type: "ticket",
+//         title: "Boxing show in London",
+//         status: "active",
+//         time: "3 h ago",
+//       },
+//       {
+//         type: "interaction",
+//         title: "Called re: yacht charter",
+//         status: "done",
+//         time: "1 d ago",
+//       },
+//       {
+//         type: "ticket",
+//         title: "Private jet to Dubai",
+//         status: "done",
+//         time: "2 d ago",
+//       },
+//     ],
+//   },
+//   {
+//     id: "CUST-002",
+//     name: "Priya Sharma",
+//     email: "priya.sharma@gmail.com",
+//     phone: "9876543210",
+//     location: "Delhi, India",
+//     tier: "Gold",
+//     totalSpent: "$75,000",
+//     activeTickets: 2,
+//     joinDate: "Mar 2024",
+//     lastInteraction: "1 day ago",
+//     satisfaction: 4.7,
+//     interactions: 23,
+//     preferences: {
+//       likes: [
+//         "Art Galleries",
+//         "Wine Tasting",
+//         "Spa Treatments",
+//         "Cultural Events",
+//       ],
+//       dislikes: ["Loud Music", "Spicy Food", "Late-night events"],
+//     },
+//     aiRecommendations: [
+//       "Private art-gallery tour in Paris",
+//       "Exclusive wine tasting in Tuscany",
+//       "Luxury spa retreat in Bali",
+//     ],
+//     recentActivity: [
+//       {
+//         type: "ticket",
+//         title: "Spa weekend booking",
+//         status: "active",
+//         time: "1 d ago",
+//       },
+//       {
+//         type: "interaction",
+//         title: "Asked about art auction",
+//         status: "done",
+//         time: "3 d ago",
+//       },
+//     ],
+//   },
+//   {
+//     id: "CUST-003",
+//     name: "Robert Chen",
+//     email: "robert.chen@techcorp.com",
+//     phone: "555-0123",
+//     location: "San Francisco, USA",
+//     tier: "Diamond",
+//     totalSpent: "$250,000",
+//     activeTickets: 1,
+//     joinDate: "Dec 2023",
+//     lastInteraction: "30 min ago",
+//     satisfaction: 5.0,
+//     interactions: 89,
+//     preferences: {
+//       likes: [
+//         "Tech Events",
+//         "Mountain Sports",
+//         "Craft Cocktails",
+//         "Modern Architecture",
+//       ],
+//       dislikes: [
+//         "Formal Dress Codes",
+//         "Traditional Cuisine",
+//         "Beach Vacations",
+//       ],
+//     },
+//     aiRecommendations: [
+//       "Exclusive tech-conference access in Vegas",
+//       "Helicopter skiing in Swiss Alps",
+//       "Private architectural tours in Barcelona",
+//     ],
+//     recentActivity: [
+//       {
+//         type: "ticket",
+//         title: "CES 2025 VIP access",
+//         status: "active",
+//         time: "30 m ago",
+//       },
+//       {
+//         type: "ticket",
+//         title: "Ski resort in Aspen",
+//         status: "done",
+//         time: "1 w ago",
+//       },
+//     ],
+//   },
+// ];
 
 /* ------------------------------------------------------------------ */
 /*                               VIEW                                 */
@@ -175,21 +181,22 @@ export default function CustomersView() {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [customers, setCustomers] = useState<any[]>([]);
 
   const filtered = customers.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.email.toLowerCase().includes(search.toLowerCase())
   );
-  
+
   // Fetch dashboard data when a customer is selected
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!selected) return;
-      
+
       setLoading(true);
       setError(null);
-      
+
       try {
         // Use userId from localStorage
         const userId = localStorage.getItem("userId");
@@ -197,7 +204,7 @@ export default function CustomersView() {
           setError("User ID not found in localStorage");
           return;
         }
-        
+
         const response = await getUserDashboard(userId);
         setDashboardData(response.data.data);
       } catch (err: any) {
@@ -211,6 +218,19 @@ export default function CustomersView() {
     fetchDashboardData();
   }, [selected]);
 
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const res = await getAllUsers();
+        setCustomers(res.data.data.users);
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
+
   /* ---------------------------- RENDER ---------------------------- */
   return (
     <div className="space-y-6">
@@ -223,9 +243,9 @@ export default function CustomersView() {
           </p>
         </div>
 
-        <button className="bg-amber-500 px-4 py-2 rounded hover:bg-amber-600 text-white">
+        {/* <button className="bg-amber-500 px-4 py-2 rounded hover:bg-amber-600 text-white">
           Add New Customer
-        </button>
+        </button> */}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -281,9 +301,9 @@ export default function CustomersView() {
                   <p className="text-slate-400">{selected.phone}</p>
                   <p className="text-slate-400">{selected.location}</p>
                 </div>
-                <button className="p-2 rounded hover:bg-slate-700">
+                {/* <button className="p-2 rounded hover:bg-slate-700">
                   <MoreHorizontal className="h-4 w-4 text-slate-400" />
-                </button>
+                </button> */}
               </div>
 
               {/* Tabs (simple) */}
@@ -318,7 +338,7 @@ export default function CustomersView() {
                   ) : error ? (
                     <div className="text-center py-8">
                       <p className="text-red-400 mb-2">{error}</p>
-                      <button 
+                      <button
                         onClick={() => window.location.reload()}
                         className="px-4 py-2 bg-amber-500 text-slate-900 rounded-lg text-sm font-medium hover:bg-amber-400 transition-colors"
                       >
@@ -330,7 +350,9 @@ export default function CustomersView() {
                       <Metric
                         icon={<DollarSign className="h-4 w-4 text-green-400" />}
                         label="Total Spent"
-                        value={`$${dashboardData.total_spent?.toLocaleString() || '0'}`}
+                        value={`$${
+                          dashboardData.total_spent?.toLocaleString() || "0"
+                        }`}
                       />
                       <Metric
                         icon={<Ticket className="h-4 w-4 text-blue-400" />}
@@ -347,33 +369,34 @@ export default function CustomersView() {
                         label="Interactions"
                         value={dashboardData.total_sessions || 0}
                       />
-                                         </div>
-                   ) : (
-                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                       {/* Fallback to dummy data if no API data */}
-                       <Metric
-                         icon={<DollarSign className="h-4 w-4 text-green-400" />}
-                         label="Total Spent"
-                         value={selected.totalSpent}
-                       />
-                       <Metric
-                         icon={<Ticket className="h-4 w-4 text-blue-400" />}
-                         label="Active Tickets"
-                         value={selected.activeTickets}
-                       />
-                       <Metric
-                         icon={<Star className="h-4 w-4 text-yellow-400" />}
-                         label="Satisfaction"
-                         value={`${selected.satisfaction}/5`}
-                       />
-                       <Metric
-                         icon={<MessageSquare className="h-4 w-4 text-purple-400" />}
-                         label="Interactions"
-                         value={selected.interactions}
-                       />
-                     </div>
-                   )}
-
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {/* Fallback to dummy data if no API data */}
+                      <Metric
+                        icon={<DollarSign className="h-4 w-4 text-green-400" />}
+                        label="Total Spent"
+                        value={selected.totalSpent}
+                      />
+                      <Metric
+                        icon={<Ticket className="h-4 w-4 text-blue-400" />}
+                        label="Active Tickets"
+                        value={selected.activeTickets}
+                      />
+                      <Metric
+                        icon={<Star className="h-4 w-4 text-yellow-400" />}
+                        label="Satisfaction"
+                        value={`${selected.satisfaction}/5`}
+                      />
+                      <Metric
+                        icon={
+                          <MessageSquare className="h-4 w-4 text-purple-400" />
+                        }
+                        label="Interactions"
+                        value={selected.interactions}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -384,14 +407,19 @@ export default function CustomersView() {
                     title="Likes & Preferences"
                     icon={<Heart className="h-4 w-4 text-green-400" />}
                   >
-                    {selected.preferences.likes.map((like) => (
-                      <span
-                        key={like}
-                        className="bg-green-500/10 text-green-300 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block"
-                      >
-                        {like}
-                      </span>
-                    ))}
+                    {selected.preferences.likes
+                      .filter(
+                        (like: any) =>
+                          typeof like === "string" || typeof like === "number"
+                      )
+                      .map((like: string | number) => (
+                        <span
+                          key={like}
+                          className="bg-green-500/10 text-green-300 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block"
+                        >
+                          {like}
+                        </span>
+                      ))}
                   </PrefCard>
 
                   {/* Dislikes */}
@@ -399,87 +427,111 @@ export default function CustomersView() {
                     title="Dislikes & Avoid"
                     icon={<X className="h-4 w-4 text-red-400" />}
                   >
-                    {selected.preferences.dislikes.map((d) => (
-                      <span
-                        key={d}
-                        className="bg-red-500/10 text-red-300 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block"
-                      >
-                        {d}
-                      </span>
-                    ))}
+                    {selected.preferences.dislikes
+                      .filter(
+                        (d: any) =>
+                          typeof d === "string" || typeof d === "number"
+                      )
+                      .map((d: string | number) => (
+                        <span
+                          key={d}
+                          className="bg-red-500/10 text-red-300 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block"
+                        >
+                          {d}
+                        </span>
+                      ))}
                   </PrefCard>
                 </div>
               )}
 
-{activeTab === "activity" && (
-  <div className="space-y-4">
-    {loading ? (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
-      </div>
-    ) : error ? (
-      <div className="text-center py-8">
-        <p className="text-red-400 mb-2">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-amber-500 text-slate-900 rounded-lg text-sm font-medium hover:bg-amber-400 transition-colors"
-        >
-          Retry
-        </button>
-      </div>
-    ) : dashboardData?.recent_activity ? (
-      <div className="space-y-4">
-        {dashboardData.recent_activity.slice(0, 4).map((activity: any, i: number) => (
-          <div
-            key={activity._id || i}
-            className="flex items-center justify-between p-4 bg-slate-700 rounded"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-blue-400/10">
-                <Ticket className="h-4 w-4 text-blue-400" />
-              </div>
-              <div>
-                <p className="text-white">{activity.title}</p>
-                <p className="text-xs text-slate-400">
-                  {new Date(activity.created_at).toLocaleDateString()}{" "}
-                  {new Date(activity.created_at).toLocaleTimeString()}
-                </p>
-              </div>
-            </div>
-            <span
-              className={`text-xs px-2 py-1 rounded-full ${
-                activity.status === "in_progress" || activity.status === "active"
-                  ? "bg-amber-500/10 text-amber-400"
-                  : activity.status === "pending"
-                  ? "bg-yellow-500/10 text-yellow-400"
-                  : "bg-slate-500/10 text-slate-300"
-              }`}
-            >
-              {activity.status}
-            </span>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <p className="text-slate-400">No recent activity found.</p>
-    )}
-  </div>
-)}
-
+              {activeTab === "activity" && (
+                <div className="space-y-4">
+                  {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+                    </div>
+                  ) : error ? (
+                    <div className="text-center py-8">
+                      <p className="text-red-400 mb-2">{error}</p>
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-amber-500 text-slate-900 rounded-lg text-sm font-medium hover:bg-amber-400 transition-colors"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : dashboardData?.recent_activity ? (
+                    <div className="space-y-4">
+                      {dashboardData.recent_activity
+                        .slice(0, 4)
+                        .map((activity: any, i: number) => (
+                          <div
+                            key={activity._id || i}
+                            className="flex items-center justify-between p-4 bg-slate-700 rounded"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded bg-blue-400/10">
+                                <Ticket className="h-4 w-4 text-blue-400" />
+                              </div>
+                              <div>
+                                <p className="text-white">{activity.title}</p>
+                                <p className="text-xs text-slate-400">
+                                  {new Date(
+                                    activity.created_at
+                                  ).toLocaleDateString()}{" "}
+                                  {new Date(
+                                    activity.created_at
+                                  ).toLocaleTimeString()}
+                                </p>
+                              </div>
+                            </div>
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                activity.status === "in_progress" ||
+                                activity.status === "active"
+                                  ? "bg-amber-500/10 text-amber-400"
+                                  : activity.status === "pending"
+                                  ? "bg-yellow-500/10 text-yellow-400"
+                                  : "bg-slate-500/10 text-slate-300"
+                              }`}
+                            >
+                              {activity.status}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-400">No recent activity found.</p>
+                  )}
+                </div>
+              )}
 
               {activeTab === "ai" && (
                 <div className="space-y-4">
-                  {selected.aiRecommendations.map((r, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between p-4 bg-slate-700 rounded"
-                    >
-                      <p className="text-white">{r}</p>
-                      <button className="text-xs bg-transparent border border-amber-500 text-amber-400 px-3 py-1 rounded hover:bg-amber-500 hover:text-white transition">
-                        Create Ticket
-                      </button>
-                    </div>
-                  ))}
+                  {selected.aiRecommendations.map(
+                    (
+                      r:
+                        | string
+                        | number
+                        | boolean
+                        | ReactElement<any, string | JSXElementConstructor<any>>
+                        | Iterable<ReactNode>
+                        | ReactPortal
+                        | null
+                        | undefined,
+                      i: Key | null | undefined
+                    ) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between p-4 bg-slate-700 rounded"
+                      >
+                        <p className="text-white">{r}</p>
+                        <button className="text-xs bg-transparent border border-amber-500 text-amber-400 px-3 py-1 rounded hover:bg-amber-500 hover:text-white transition">
+                          Create Ticket
+                        </button>
+                      </div>
+                    )
+                  )}
                 </div>
               )}
             </div>

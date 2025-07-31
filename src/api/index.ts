@@ -3,11 +3,9 @@ import axios from "axios";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../contexts/firebaseConfig";
 
-
-// Base Axios instance 
+// Base Axios instance
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
-
 
 // const PORT = import.meta.env.VITE_API_PORT || 5002;
 
@@ -19,7 +17,6 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
-
 
 // =======================
 // Types
@@ -53,17 +50,17 @@ export interface EndSessionPayload {
 }
 
 export interface SessionResponse {
-  _id?: string;              // From API
-  sessionId?: string;        // From API
-  session_id?: string;       // Alternative name (if needed)
-  userId?: string;           // From API
-  user_id?: string;          // Alternative name
-  isSessionEnd?: boolean;    // From API
+  _id?: string; // From API
+  sessionId?: string; // From API
+  session_id?: string; // Alternative name (if needed)
+  userId?: string; // From API
+  user_id?: string; // Alternative name
+  isSessionEnd?: boolean; // From API
   isTicketCreated?: boolean; // From API
-  ticketId?: string | null;  // From API
-  agentResponse?: string;    // From API
-  status?: 'active' | 'ended';
-  
+  ticketId?: string | null; // From API
+  agentResponse?: string; // From API
+  status?: "active" | "ended";
+
   // Chat messages
   chats?: Array<{
     time: string;
@@ -71,9 +68,9 @@ export interface SessionResponse {
     question: string;
     agent_response: string;
   }>;
-  
+
   messages?: Array<{
-    role: 'user' | 'ai';
+    role: "user" | "ai";
     content: string;
     timestamp: string;
   }>;
@@ -87,8 +84,6 @@ export interface SessionResponse {
   updated_at?: string;
   user?: string;
 }
-
-
 
 export interface UserResponse {
   name: string;
@@ -178,7 +173,10 @@ export const signup = (data: SignupPayload) => {
   if (!cleanData.password) {
     delete cleanData.password;
   }
-  return api.post<{ data: { user_id: string } }>("/api/v1/users/signup", cleanData);
+  return api.post<{ data: { user_id: string } }>(
+    "/api/v1/users/signup",
+    cleanData
+  );
 };
 
 export const login = (data: LoginPayload) =>
@@ -204,10 +202,13 @@ export const signInWithGoogle = async () => {
 export const googleSignin = (data: GoogleSignInPayload) =>
   api.post<{ data: GoogleSignInResponse }>("/api/v1/users/google-signin", data);
 
-export const googleSignup = (googleData: GoogleSignInPayload, additionalDetails: any) =>
+export const googleSignup = (
+  googleData: GoogleSignInPayload,
+  additionalDetails: any
+) =>
   api.post<{ data: { user_id: string } }>("/api/v1/users/google-signup", {
     google_data: googleData,
-    additional_details: additionalDetails
+    additional_details: additionalDetails,
   });
 
 export const handleGoogleAuth = async (): Promise<{
@@ -259,26 +260,32 @@ export const createOrUpdateSession = (data: SessionPayload) =>
     agentResponse: string;
     sessionId: any;
     status: string;
-    ticketId(arg0: string, ticketId: any): unknown; data: SessionResponse 
-}>("/api/v1/sessions/", data);
+    ticketId(arg0: string, ticketId: any): unknown;
+    data: SessionResponse;
+  }>("/api/v1/sessions/", data);
 
 export const endSession = (sessionId: string, data: EndSessionPayload) =>
-  api.post<{ data: SessionResponse }>(`/api/v1/sessions/${sessionId}/end/`, data);
+  api.post<{ data: SessionResponse }>(
+    `/api/v1/sessions/${sessionId}/end/`,
+    data
+  );
 
 export const getSessionDetails = (sessionId: string, userId?: string) => {
   const params = userId ? { user_id: userId } : {};
   console.log("getSessionDetails called with:", { sessionId, userId, params });
-  return api.get<{ data: SessionResponse }>(`/api/v1/sessions/${sessionId}`, { params });
+  return api.get<{ data: SessionResponse }>(`/api/v1/sessions/${sessionId}`, {
+    params,
+  });
 };
 
 export const getUserSessions = (userId: string) =>
-  api.get<{ 
-    data: { 
+  api.get<{
+    data: {
       sessions: SessionResponse[];
       count: number;
       total_count: number;
       has_more: boolean;
-    }
+    };
   }>(`/api/v1/sessions/user/${userId}`);
 
 // Tickets
@@ -445,3 +452,12 @@ export const getUserDashboard = (userId: string) =>
 // Store Persona API
 export const storePersona = (data: StorePersonaPayload) =>
   api.post<{ data: { persona_id: string } }>("/api/v1/personas/", data);
+
+export const getAllUsers = () =>
+  api.get<{
+    success: boolean;
+    message: string;
+    data: {
+      users: any[];
+    };
+  }>("/api/v1/users");

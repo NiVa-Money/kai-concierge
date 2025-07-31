@@ -1,19 +1,25 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useRef } from "react";
-import { getUserSessions, getSessionDetails, createOrUpdateSession, endSession, SessionResponse } from "../../api";
+import {
+  getUserSessions,
+  getSessionDetails,
+  createOrUpdateSession,
+  endSession,
+  SessionResponse,
+} from "../../api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useChat } from "../../contexts/ChatContext";
-import { 
-  Clock, 
-  MessageSquare, 
-  Bot, 
+import {
+  Clock,
+  MessageSquare,
+  Bot,
   Send,
   Calendar,
   User as UserIcon,
   History,
   Search,
-  X,
-  Square
+  Square,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -21,7 +27,8 @@ const SessionsTab: React.FC = () => {
   const [sessions, setSessions] = useState<SessionResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedSession, setSelectedSession] = useState<SessionResponse | null>(null);
+  const [selectedSession, setSelectedSession] =
+    useState<SessionResponse | null>(null);
   const [sessionDetails, setSessionDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [input, setInput] = useState("");
@@ -51,7 +58,9 @@ const SessionsTab: React.FC = () => {
       try {
         setLoading(true);
         const response = await getUserSessions(user.user_id);
-        const mappedSessions = (response.data.data.sessions as SessionResponse[])
+        const mappedSessions = (
+          response.data.data.sessions as SessionResponse[]
+        )
           .filter((s) => s.sessionId && s.userId && s.sessionStartAt)
           .map((s) => ({
             session_id: s.sessionId!,
@@ -83,9 +92,11 @@ const SessionsTab: React.FC = () => {
       console.log("Fetching session details with userId:", userId);
       const response = await getSessionDetails(sessionId, userId || undefined);
       const sessionData = response.data.data;
-      
+
       setSessionDetails(sessionData);
-      setSelectedSession(sessions.find(s => s.session_id === sessionId) || null);
+      setSelectedSession(
+        sessions.find((s) => s.session_id === sessionId) || null
+      );
 
       // Convert chats to messages for the chat context
       const messages = (sessionData.chats ?? []).flatMap((chat: any) => [
@@ -110,7 +121,9 @@ const SessionsTab: React.FC = () => {
         userId: sessionData.userId ?? "",
         messages,
         isActive: !sessionData.isSessionEnd,
-        createdAt: new Date(sessionData.sessionStartAt ?? sessionData.created_at ?? Date.now()),
+        createdAt: new Date(
+          sessionData.sessionStartAt ?? sessionData.created_at ?? Date.now()
+        ),
       });
 
       loadSessionMessages(messages);
@@ -138,12 +151,15 @@ const SessionsTab: React.FC = () => {
     if (sessionDetails) {
       setSessionDetails((prev: any) => ({
         ...prev,
-        chats: [...(prev.chats || []), {
-          id: userMsg.id,
-          question: input,
-          agent_response: "",
-          time: new Date().toISOString()
-        }]
+        chats: [
+          ...(prev.chats || []),
+          {
+            id: userMsg.id,
+            question: input,
+            agent_response: "",
+            time: new Date().toISOString(),
+          },
+        ],
       }));
     }
 
@@ -158,17 +174,18 @@ const SessionsTab: React.FC = () => {
         persona: JSON.stringify(aiPersona),
       });
 
-      const agentResponse = res?.data?.agentResponse || "I've processed your request.";
+      const agentResponse =
+        res?.data?.agentResponse || "I've processed your request.";
 
       // Add AI response to session details
       if (sessionDetails) {
         setSessionDetails((prev: any) => ({
           ...prev,
-          chats: prev.chats.map((chat: any, index: number) => 
-            index === prev.chats.length - 1 
+          chats: prev.chats.map((chat: any, index: number) =>
+            index === prev.chats.length - 1
               ? { ...chat, agent_response: agentResponse }
               : chat
-          )
+          ),
         }));
       }
 
@@ -192,7 +209,7 @@ const SessionsTab: React.FC = () => {
       setSessionDetails((prev: any) => ({
         ...prev,
         isSessionEnd: true,
-        status: "ended"
+        status: "ended",
       }));
 
       // Update the session in the sessions list
@@ -242,7 +259,7 @@ const SessionsTab: React.FC = () => {
     });
   };
 
-  const filteredSessions = sessions.filter(session =>
+  const filteredSessions = sessions.filter((session) =>
     (session.question || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -291,13 +308,12 @@ const SessionsTab: React.FC = () => {
 
         {/* History Section */}
         <div className="overflow-y-auto max-h-[calc(100vh-80px)] custom-scrollbar">
-
           <div className="p-4">
             <div className="flex items-center space-x-2 mb-4">
               <History className="w-5 h-5 text-amber-400" />
               <h3 className="text-white font-medium">History</h3>
             </div>
-            
+
             {filteredSessions.length === 0 ? (
               <div className="text-center py-8">
                 <MessageSquare className="w-8 h-8 text-slate-500 mx-auto mb-2" />
@@ -308,9 +324,14 @@ const SessionsTab: React.FC = () => {
                 {filteredSessions.map((session) => (
                   <button
                     key={session.session_id}
-                    onClick={() => session.session_id && handleSessionClick(session.session_id)}
+                    onClick={() =>
+                      session.session_id &&
+                      handleSessionClick(session.session_id)
+                    }
                     className={`w-full text-left p-3 rounded-lg hover:bg-slate-700/50 transition-colors ${
-                      selectedSession?.session_id === session.session_id ? 'bg-amber-400/10 border border-amber-400/20' : ''
+                      selectedSession?.session_id === session.session_id
+                        ? "bg-amber-400/10 border border-amber-400/20"
+                        : ""
                     }`}
                   >
                     <div className="flex justify-between items-start mb-1">
@@ -346,7 +367,10 @@ const SessionsTab: React.FC = () => {
         {selectedSession && sessionDetails ? (
           <>
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar min-h-0" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+            <div
+              className="flex-1 overflow-y-auto p-6 custom-scrollbar min-h-0"
+              style={{ maxHeight: "calc(100vh - 200px)" }}
+            >
               <AnimatePresence>
                 {loadingDetails ? (
                   <div className="flex items-center justify-center h-full">
@@ -365,7 +389,9 @@ const SessionsTab: React.FC = () => {
                           <div className="max-w-2xl bg-amber-400/10 border border-amber-400/20 rounded-2xl px-4 py-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <UserIcon className="w-4 h-4 text-amber-400" />
-                              <span className="text-xs font-medium text-amber-400">You</span>
+                              <span className="text-xs font-medium text-amber-400">
+                                You
+                              </span>
                             </div>
                             <div className="text-white text-sm leading-relaxed">
                               {formatMessage(chat.question)}
@@ -385,7 +411,9 @@ const SessionsTab: React.FC = () => {
                           <div className="max-w-2xl bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3">
                             <div className="flex items-center space-x-2 mb-2">
                               <Bot className="w-4 h-4 text-amber-400" />
-                              <span className="text-xs font-medium text-amber-400">AI Assistant</span>
+                              <span className="text-xs font-medium text-amber-400">
+                                AI Assistant
+                              </span>
                             </div>
                             <div className="text-white text-sm leading-relaxed">
                               {formatMessage(chat.agent_response)}
@@ -429,7 +457,9 @@ const SessionsTab: React.FC = () => {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full p-4 text-center">
                     <MessageSquare className="w-12 h-12 text-slate-500 mb-4" />
-                    <p className="text-slate-300 mb-2">No messages in this session</p>
+                    <p className="text-slate-300 mb-2">
+                      No messages in this session
+                    </p>
                     <p className="text-slate-400 text-sm">
                       This session doesn't contain any chat messages
                     </p>
@@ -472,11 +502,19 @@ const SessionsTab: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center space-x-2">
                       <span className="text-slate-400">Session: </span>
-                      <span className="text-white font-mono text-xs">{sessionDetails.sessionId}</span>
+                      <span className="text-white font-mono text-xs">
+                        {sessionDetails.sessionId}
+                      </span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-slate-400">Status: </span>
-                      <span className={`${sessionDetails.isSessionEnd ? 'text-slate-400' : 'text-green-400'}`}>
+                      <span
+                        className={`${
+                          sessionDetails.isSessionEnd
+                            ? "text-slate-400"
+                            : "text-green-400"
+                        }`}
+                      >
                         {sessionDetails.isSessionEnd ? "Ended" : "Active"}
                       </span>
                     </div>
@@ -487,7 +525,7 @@ const SessionsTab: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  
+
                   {/* End Session Button - Only show for active sessions */}
                   {!sessionDetails.isSessionEnd && (
                     <button
@@ -510,9 +548,12 @@ const SessionsTab: React.FC = () => {
               <div className="w-16 h-16 bg-amber-400/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <MessageSquare className="w-8 h-8 text-amber-400" />
               </div>
-              <h2 className="text-2xl font-medium text-white mb-4">Welcome to Your Chat History</h2>
+              <h2 className="text-2xl font-medium text-white mb-4">
+                Welcome to Your Chat History
+              </h2>
               <p className="text-slate-400 mb-8 leading-relaxed">
-                Select a conversation from the history to continue where you left off, or start a new chat to begin a fresh conversation.
+                Select a conversation from the history to continue where you
+                left off, or start a new chat to begin a fresh conversation.
               </p>
               <div className="flex items-center justify-center space-x-4 text-sm text-slate-500">
                 <div className="flex items-center space-x-2">
@@ -539,12 +580,15 @@ const SessionsTab: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-white font-medium">End Session</h3>
-                <p className="text-slate-400 text-sm">Are you sure you want to end this session?</p>
+                <p className="text-slate-400 text-sm">
+                  Are you sure you want to end this session?
+                </p>
               </div>
             </div>
-            
+
             <p className="text-slate-300 text-sm mb-6">
-              This action cannot be undone. The session will be marked as ended and you won't be able to continue the conversation.
+              This action cannot be undone. The session will be marked as ended
+              and you won't be able to continue the conversation.
             </p>
 
             <div className="flex space-x-3">
