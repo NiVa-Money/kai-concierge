@@ -1,16 +1,12 @@
- 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
-import { createOrUpdateSession, endSession, getSessionDetails } from "../../api";
 import {
-  Send,
-  Plane,
-  Car,
-  Utensils,
-  Calendar,
-  Star,
-  Crown,
-} from "lucide-react";
+  createOrUpdateSession,
+  endSession,
+  getPersonaRecommendations,
+  getSessionDetails,
+} from "../../api";
+import { Send, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ChatTab: React.FC = () => {
@@ -19,6 +15,7 @@ const ChatTab: React.FC = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
 
   const userId = localStorage.getItem("userId");
   const aiPersona = JSON.parse(localStorage.getItem("aiPersona") || "{}");
@@ -45,7 +42,7 @@ const ChatTab: React.FC = () => {
 
   useEffect(() => {
     const loadExistingSession = async () => {
-      const savedSessionId = localStorage.getItem('currentSessionId');
+      const savedSessionId = localStorage.getItem("currentSessionId");
       if (savedSessionId && userId) {
         try {
           const response = await getSessionDetails(savedSessionId, userId);
@@ -56,15 +53,15 @@ const ChatTab: React.FC = () => {
           if (sessionData.messages && sessionData.messages.length > 0) {
             const formattedMessages = sessionData.messages.map((msg: any) => ({
               id: msg.id || Date.now().toString() + Math.random().toString(),
-              sender: msg.role === 'user' ? 'user' : 'agent',
+              sender: msg.role === "user" ? "user" : "agent",
               content: msg.content,
               timestamp: new Date(msg.timestamp),
             }));
             setMessages(formattedMessages);
           }
         } catch (error) {
-          console.error('Error loading saved session:', error);
-          localStorage.removeItem('currentSessionId');
+          console.error("Error loading saved session:", error);
+          localStorage.removeItem("currentSessionId");
         }
       }
     };
@@ -108,64 +105,19 @@ const ChatTab: React.FC = () => {
       setMessages((prev) => [...prev, agentMsg]);
       if (res?.data?.sessionId) {
         setSessionId(res.data.sessionId);
-        localStorage.setItem('currentSessionId', res.data.sessionId);
+        localStorage.setItem("currentSessionId", res.data.sessionId);
       }
       setIsTyping(false);
 
-      if (res?.data?.status === 'ended') {
+      if (res?.data?.status === "ended") {
         console.log("Session ended. Ticket ID:", res.data.ticketId);
       }
     } catch (error: any) {
-      console.error("API error:", error, error?.response?.data || error.message);
-      setIsTyping(false);
-    }
-  };
-
-  const handleServiceClick = async (prompt: string) => {
-    if (!userId) return;
-
-    const userMsg = {
-      id: Date.now().toString(),
-      sender: "user",
-      content: prompt,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setIsTyping(true);
-
-    try {
-      const res = await createOrUpdateSession({
-        userId,
-        sessionId: sessionId ?? undefined,
-        question: prompt,
-        persona: JSON.stringify(aiPersona),
-      });
-
-      console.log(res);
-
-      const agentResponse =
-        res?.data?.agentResponse || "I've processed your request.";
-
-      const agentMsg = {
-        id: Date.now().toString() + "-agent",
-        sender: "agent",
-        content: agentResponse,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, agentMsg]);
-      if (res?.data?.sessionId) {
-        setSessionId(res.data.sessionId);
-        localStorage.setItem('currentSessionId', res.data.sessionId);
-      }
-      setIsTyping(false);
-
-      if (res?.data?.status === 'ended') {
-        console.log("Session ended.");
-      }
-    } catch (error: any) {
-      console.error("API error:", error, error?.response?.data || error.message);
+      console.error(
+        "API error:",
+        error,
+        error?.response?.data || error.message
+      );
       setIsTyping(false);
     }
   };
@@ -179,7 +131,7 @@ const ChatTab: React.FC = () => {
       });
       setSessionId(null);
       setMessages([]);
-      localStorage.removeItem('currentSessionId');
+      localStorage.removeItem("currentSessionId");
     } catch (error) {
       console.error("Error ending session:", error);
     }
@@ -198,41 +150,6 @@ const ChatTab: React.FC = () => {
       )
     );
   };
-
-  const eliteServices = [
-    {
-      icon: <Plane className="w-4 h-4" />,
-      label: "Aviation",
-      color: "text-blue-400",
-      description: "Private flights",
-      prompt:
-        "I need assistance with private aviation services. Can you help me arrange a charter flight for a business trip next week?",
-    },
-    {
-      icon: <Car className="w-4 h-4" />,
-      label: "Transport",
-      color: "text-purple-400",
-      description: "Luxury vehicles",
-      prompt:
-        "I'm looking for luxury transportation services. Can you arrange a limousine service for an important client meeting?",
-    },
-    {
-      icon: <Utensils className="w-4 h-4" />,
-      label: "Dining",
-      color: "text-amber-400",
-      description: "Fine cuisine",
-      prompt:
-        "I need help with fine dining reservations. Can you recommend and book a Michelin-starred restaurant for a special occasion?",
-    },
-    {
-      icon: <Calendar className="w-4 h-4" />,
-      label: "Events",
-      color: "text-emerald-400",
-      description: "Exclusive planning",
-      prompt:
-        "I'm planning an exclusive corporate event. Can you help me organize a high-end event with premium services?",
-    },
-  ];
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -256,67 +173,134 @@ const ChatTab: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center h-full text-center"
+                className="flex flex-col items-center justify-start text-center h-full"
               >
-                {/* Minimal Welcome */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-center mb-6">
-                    <Crown className="w-8 h-8 text-amber-400" />
+                {/* Welcome */}
+                <div className="mt-8 mb-4">
+                  <div className="flex items-center justify-center mb-3">
+                    <Crown className="w-7 h-7 text-amber-400" />
                   </div>
-                  <h2 className="text-2xl font-light text-white mb-2">
+                  <h2 className="text-xl font-light text-white mb-1">
                     Welcome to <span className="text-amber-400">kai°</span>
                   </h2>
-                  <p className="text-slate-300 text-base">
+                  <p className="text-slate-300 text-sm">
                     Your exclusive AI-powered concierge
                   </p>
                 </div>
 
-                {/* Minimal Services */}
-                <div className="grid grid-cols-2 gap-4 mb-8 w-full max-w-md">
-                  {eliteServices.map((service, index) => (
-                    <motion.button
-                      key={index}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleServiceClick(service.prompt)}
-                      className={`flex flex-col items-center space-y-2 p-4 rounded-lg border border-slate-700/50 hover:border-slate-600 transition-all duration-200 bg-slate-800/30 backdrop-blur-lg cursor-pointer hover:bg-slate-800/50`}
-                    >
-                      <div className={`${service.color}`}>{service.icon}</div>
-                      <span className="text-sm font-medium text-white">
-                        {service.label}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        {service.description}
-                      </span>
-                    </motion.button>
-                  ))}
-                </div>
+                {/* Button */}
+                <button
+                  onClick={async () => {
+                    if (!userId) return;
+                    try {
+                      const res = await getPersonaRecommendations(userId);
+                      const recos = res.data?.data?.recommendations || [];
+                      setRecommendations(recos);
+                    } catch (err) {
+                      console.error("Failed to get recommendations", err);
+                    }
+                  }}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-sm transition mb-5"
+                >
+                  Get Recommendations
+                </button>
 
-                {/* Minimal Features */}
-                <div className="bg-slate-800/30 backdrop-blur-lg border border-slate-700/50 rounded-lg p-4 w-full max-w-md">
-                  <h3 className="text-sm font-medium text-white mb-3 flex items-center justify-center">
-                    <Star className="w-4 h-4 text-amber-400 mr-2" />
-                    Premium Features
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-1 h-1 bg-emerald-400 rounded-full"></div>
-                      <span className="text-slate-300">Personal Concierge</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-1 h-1 bg-emerald-400 rounded-full"></div>
-                      <span className="text-slate-300">Priority Access</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-1 h-1 bg-emerald-400 rounded-full"></div>
-                      <span className="text-slate-300">Global Network</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-1 h-1 bg-emerald-400 rounded-full"></div>
-                      <span className="text-slate-300">Discrete Service</span>
-                    </div>
+                {/* Cards */}
+                {recommendations.length > 0 && (
+                  <div className="w-full max-w-7xl px-4 flex flex-wrap justify-center gap-4">
+                    {recommendations.slice(0, 6).map((r, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                        className="flex flex-col w-[300px] bg-slate-800 border border-slate-700 rounded-xl p-4 shadow hover:shadow-amber-500/20 transition-all"
+                        onClick={async () => {
+                          if (!userId) return;
+
+                          // Reset current chat state
+                          setMessages([]);
+                          setSessionId(null);
+                          localStorage.removeItem("currentSessionId");
+                          setIsTyping(true);
+
+                          const question = `Title: ${r.title}
+Description: ${r.description}
+Category: ${r.category}
+Cost: ${r.estimated_cost}
+Confidence: ${(r.confidence_score * 100).toFixed(1)}%`;
+
+                          const userMsg = {
+                            id: Date.now().toString(),
+                            sender: "user",
+                            content: question,
+                            timestamp: new Date(),
+                          };
+
+                          setMessages([userMsg]);
+
+                          try {
+                            const res = await createOrUpdateSession({
+                              userId,
+                              question,
+                              persona: JSON.stringify(aiPersona),
+                            });
+
+                            const agentResponse =
+                              res?.data?.agentResponse ||
+                              "I've processed your request.";
+
+                            const agentMsg = {
+                              id: Date.now().toString() + "-agent",
+                              sender: "agent",
+                              content: agentResponse,
+                              timestamp: new Date(),
+                            };
+
+                            setMessages((prev) => [...prev, agentMsg]);
+
+                            if (res?.data?.sessionId) {
+                              setSessionId(res.data.sessionId);
+                              localStorage.setItem(
+                                "currentSessionId",
+                                res.data.sessionId
+                              );
+                            }
+
+                            setIsTyping(false);
+                          } catch (error) {
+                            console.error(
+                              "Error starting session from recommendation:",
+                              error
+                            );
+                            setIsTyping(false);
+                          }
+                        }}
+                      >
+                        <h3 className="text-base font-semibold text-white mb-1">
+                          {r.title}
+                        </h3>
+
+                        <p className="text-sm text-slate-400 mb-2">
+                          {r.description}
+                        </p>
+
+                        <div className="text-xs text-slate-400 space-y-1 mb-2">
+                          <p>
+                            <strong>Category:</strong> {r.category}
+                          </p>
+                          <p>
+                            <strong>Cost:</strong> {r.estimated_cost}
+                          </p>
+                          <p>
+                            <strong>Confidence:</strong>{" "}
+                            {(r.confidence_score * 100).toFixed(1)}%
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                </div>
+                )}
               </motion.div>
             ) : (
               <div className="space-y-4">
