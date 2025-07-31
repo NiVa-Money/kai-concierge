@@ -225,10 +225,8 @@ const ChatTab: React.FC = () => {
                           setIsTyping(true);
 
                           const question = `Title: ${r.title}
-Description: ${r.description}
-Category: ${r.category}
-Cost: ${r.estimated_cost}
-Confidence: ${(r.confidence_score * 100).toFixed(1)}%`;
+Description: ${r.reasoning}
+Cost: ${r.estimated_cost}`;
 
                           const userMsg = {
                             id: Date.now().toString(),
@@ -282,19 +280,12 @@ Confidence: ${(r.confidence_score * 100).toFixed(1)}%`;
                         </h3>
 
                         <p className="text-sm text-slate-400 mb-2">
-                          {r.description}
+                          {r.reasoning}
                         </p>
 
                         <div className="text-xs text-slate-400 space-y-1 mb-2">
                           <p>
-                            <strong>Category:</strong> {r.category}
-                          </p>
-                          <p>
                             <strong>Cost:</strong> {r.estimated_cost}
-                          </p>
-                          <p>
-                            <strong>Confidence:</strong>{" "}
-                            {(r.confidence_score * 100).toFixed(1)}%
                           </p>
                         </div>
                       </motion.div>
