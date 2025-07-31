@@ -453,6 +453,10 @@ export const getUserDashboard = (userId: string) =>
 export const storePersona = (data: StorePersonaPayload) =>
   api.post<{ data: { persona_id: string } }>("/api/v1/personas/", data);
 
+// Get personas for a user
+export const getUserPersonas = (userId: string) =>
+  api.get<{ data: any }>(`/api/v1/personas/user/${userId}`);
+
 export const getAllUsers = () =>
   api.get<{
     success: boolean;

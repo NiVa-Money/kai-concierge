@@ -8,16 +8,16 @@ import {
   ReactNode,
   ReactPortal,
 } from "react";
-import { getUserDashboard, getAllUsers } from "../../api";
+import { getUserDashboard, getAllUsers, getUserPersonas } from "../../api";
 import {
   Star,
   DollarSign,
   Ticket,
   MessageSquare,
-  Heart,
-  X,
   Search,
   Users,
+  Heart,
+  X,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -181,6 +181,7 @@ export default function CustomersView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<any[]>([]);
+  const [personaData, setPersonaData] = useState<any[]>([]);
 
   const filtered = customers.filter(
     (c) =>
@@ -215,6 +216,36 @@ export default function CustomersView() {
     };
 
     fetchDashboardData();
+  }, [selected]);
+
+  useEffect(() => {
+    const fetchDashboardDataAndPersonas = async () => {
+      if (!selected?._id) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const userId = selected._id;
+
+        const [dashboardRes, personaRes] = await Promise.all([
+          getUserDashboard(userId),
+          getUserPersonas(userId),
+        ]);
+
+        setDashboardData(dashboardRes.data.data);
+
+        const personas = personaRes.data?.data?.personas || [];
+        setPersonaData(personas);
+      } catch (err: any) {
+        console.error("Error fetching customer data:", err);
+        setError("Failed to load customer data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardDataAndPersonas();
   }, [selected]);
 
   useEffect(() => {
@@ -414,46 +445,106 @@ export default function CustomersView() {
               )}
 
               {activeTab === "prefs" && (
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Likes */}
-                  <PrefCard
-                    title="Likes & Preferences"
-                    icon={<Heart className="h-4 w-4 text-green-400" />}
-                  >
-                    {selected.preferences.likes
-                      .filter(
-                        (like: any) =>
-                          typeof like === "string" || typeof like === "number"
-                      )
-                      .map((like: string | number) => (
-                        <span
-                          key={like}
-                          className="bg-green-500/10 text-green-300 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block"
-                        >
-                          {like}
-                        </span>
-                      ))}
-                  </PrefCard>
+                <div className="max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
+                  {loading ? (
+                    <div className="text-slate-400">Loading persona...</div>
+                  ) : personaData.length === 0 ? (
+                    <p className="text-slate-400">No persona available.</p>
+                  ) : (
+                    <div className="space-y-6">
+                      {personaData.map((persona, i) => {
+                        const slides = persona?.profileData?.slides || {};
 
-                  {/* Dislikes */}
-                  <PrefCard
-                    title="Dislikes & Avoid"
-                    icon={<X className="h-4 w-4 text-red-400" />}
-                  >
-                    {selected.preferences.dislikes
-                      .filter(
-                        (d: any) =>
-                          typeof d === "string" || typeof d === "number"
-                      )
-                      .map((d: string | number) => (
-                        <span
-                          key={d}
-                          className="bg-red-500/10 text-red-300 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block"
-                        >
-                          {d}
-                        </span>
-                      ))}
-                  </PrefCard>
+                        const likes: string[] =
+                          slides.interests_habits?.points || [];
+                        const preferences: string[] =
+                          slides.shopping_persona?.points || [];
+                        const dislikesAvoid: string[] =
+                          slides.personality_type?.points || [];
+
+                        return (
+                          <div
+                            key={persona._id || i}
+                            className="bg-slate-700 rounded p-4 space-y-4"
+                          >
+                            <h3 className="text-lg font-semibold text-white">
+                              {persona.platform} - @{persona.username}
+                            </h3>
+
+                            {/* Likes */}
+                            <PrefCard
+                              title="Likes"
+                              icon={
+                                <Heart className="h-4 w-4 text-green-400" />
+                              }
+                            >
+                              {likes.length > 0 ? (
+                                likes.map((item, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="bg-green-500/10 text-green-300 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block"
+                                  >
+                                    {item}
+                                  </span>
+                                ))
+                              ) : (
+                                <p className="text-slate-400 text-sm">
+                                  No likes found.
+                                </p>
+                              )}
+                            </PrefCard>
+
+                            {/* Preferences */}
+                            <PrefCard
+                              title="Preferences"
+                              icon={<Heart className="h-4 w-4 text-blue-400" />}
+                            >
+                              {preferences.length > 0 ? (
+                                preferences.map((item, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="bg-blue-500/10 text-blue-300 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block"
+                                  >
+                                    {item}
+                                  </span>
+                                ))
+                              ) : (
+                                <p className="text-slate-400 text-sm">
+                                  No preferences available.
+                                </p>
+                              )}
+                            </PrefCard>
+
+                            {/* Dislikes & Avoid */}
+                            <PrefCard
+                              title="Dislikes & Avoid"
+                              icon={<X className="h-4 w-4 text-red-400" />}
+                            >
+                              {dislikesAvoid.length > 0 ? (
+                                dislikesAvoid.map((item, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="bg-red-500/10 text-red-300 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block"
+                                  >
+                                    {item}
+                                  </span>
+                                ))
+                              ) : (
+                                <p className="text-slate-400 text-sm">
+                                  No dislikes or avoid data found.
+                                </p>
+                              )}
+                            </PrefCard>
+
+                            <div className="text-xs text-slate-400">
+                              Last Updated:{" "}
+                              {new Date(persona.updatedAt).toLocaleString()}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
