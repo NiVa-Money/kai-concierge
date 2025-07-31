@@ -204,11 +204,18 @@ export const signInWithGoogle = async () => {
 export const googleSignin = (data: GoogleSignInPayload) =>
   api.post<{ data: GoogleSignInResponse }>("/api/v1/users/google-signin", data);
 
+export const googleSignup = (googleData: GoogleSignInPayload, additionalDetails: any) =>
+  api.post<{ data: { user_id: string } }>("/api/v1/users/google-signup", {
+    google_data: googleData,
+    additional_details: additionalDetails
+  });
+
 export const handleGoogleAuth = async (): Promise<{
   type: "login" | "signup";
   name: string;
   email: string;
-  user_id: string;
+  user_id?: string;
+  google_data?: GoogleSignInPayload;
 }> => {
   try {
     const firebaseUser = await signInWithGoogle();
@@ -224,12 +231,22 @@ export const handleGoogleAuth = async (): Promise<{
 
     const response = await googleSignin(payload);
 
-    return {
-      type: response.data.data.type,
-      user_id: response.data.data.user_id,
-      name: firebaseUser.displayName,
-      email: firebaseUser.email,
-    };
+    if (response.data.data.type === "login") {
+      return {
+        type: "login",
+        user_id: response.data.data.user_id,
+        name: firebaseUser.displayName,
+        email: firebaseUser.email,
+      };
+    } else {
+      // For signup, return Google data for profile completion
+      return {
+        type: "signup",
+        name: firebaseUser.displayName,
+        email: firebaseUser.email,
+        google_data: payload,
+      };
+    }
   } catch (error) {
     console.error("Error during Google auth handling:", error);
     throw error;

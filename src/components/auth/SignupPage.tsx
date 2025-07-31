@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
-import { signup } from "../../api";
+import { signup, googleSignup } from "../../api";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -11,6 +11,7 @@ const SignupPage: React.FC = () => {
   const location = useLocation();
   const { updateUser } = useAuth();
   const isGoogleSignup = Boolean(location.state?.fromGoogle);
+  const googleData = location.state?.google_data;
 
   const [form, setForm] = useState({
     name: location.state?.name || "",
@@ -39,20 +40,35 @@ const SignupPage: React.FC = () => {
     
     setLoading(true);
     try {
-      const signupData: any = {
-        name: form.name,
-        age: form.age ? parseInt(form.age) : undefined,
-        phone: form.phone || undefined,
-        country_code: form.country_code,
-        email: form.email,
-      };
+      let res;
+      
+      if (isGoogleSignup && googleData) {
+        // Use Google signup API for Google users
+        const additionalDetails = {
+          name: form.name,
+          age: form.age ? parseInt(form.age) : undefined,
+          phone: form.phone || undefined,
+          country_code: form.country_code,
+        };
+        
+        res = await googleSignup(googleData, additionalDetails);
+      } else {
+        // Use regular signup API for email users
+        const signupData: any = {
+          name: form.name,
+          age: form.age ? parseInt(form.age) : undefined,
+          phone: form.phone || undefined,
+          country_code: form.country_code,
+          email: form.email,
+        };
 
-      // Only include password if it's not a Google signup
-      if (!isGoogleSignup) {
-        signupData.password = form.password;
+        // Only include password if it's not a Google signup
+        if (!isGoogleSignup) {
+          signupData.password = form.password;
+        }
+
+        res = await signup(signupData);
       }
-
-      const res = await signup(signupData);
 
       const userId = res.data?.data?.user_id;
       if (userId) {
