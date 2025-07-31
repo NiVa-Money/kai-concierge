@@ -69,6 +69,26 @@ const ChatTab: React.FC = () => {
     loadExistingSession();
   }, [userId]);
 
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!userId || messages.length > 0) return;
+
+      setIsTyping(true);
+
+      try {
+        const res = await getPersonaRecommendations(userId);
+        const recos = res.data?.data?.recommendations || [];
+        setRecommendations(recos);
+      } catch (err) {
+        console.error("Failed to get recommendations", err);
+      } finally {
+        setIsTyping(false); // stop loader
+      }
+    };
+
+    fetchRecommendations();
+  }, [userId, messages.length]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || !userId) return;
@@ -188,109 +208,39 @@ const ChatTab: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Button */}
-                <button
-                  onClick={async () => {
-                    if (!userId) return;
-                    try {
-                      const res = await getPersonaRecommendations(userId);
-                      const recos = res.data?.data?.recommendations || [];
-                      setRecommendations(recos);
-                    } catch (err) {
-                      console.error("Failed to get recommendations", err);
-                    }
-                  }}
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-sm transition mb-5"
-                >
-                  Get Recommendations
-                </button>
-
                 {/* Cards */}
-                {recommendations.length > 0 && (
-                  <div className="w-full max-w-7xl px-4 flex flex-wrap justify-center gap-4">
-                    {recommendations.slice(0, 6).map((r, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        className="flex flex-col w-[300px] bg-slate-800 border border-slate-700 rounded-xl p-4 shadow hover:shadow-amber-500/20 transition-all"
-                        onClick={async () => {
-                          if (!userId) return;
-
-                          // Reset current chat state
-                          setMessages([]);
-                          setSessionId(null);
-                          localStorage.removeItem("currentSessionId");
-                          setIsTyping(true);
-
-                          const question = `Title: ${r.title}
-Description: ${r.reasoning}
-Cost: ${r.estimated_cost}`;
-
-                          const userMsg = {
-                            id: Date.now().toString(),
-                            sender: "user",
-                            content: question,
-                            timestamp: new Date(),
-                          };
-
-                          setMessages([userMsg]);
-
-                          try {
-                            const res = await createOrUpdateSession({
-                              userId,
-                              question,
-                              persona: JSON.stringify(aiPersona),
-                            });
-
-                            const agentResponse =
-                              res?.data?.agentResponse ||
-                              "I've processed your request.";
-
-                            const agentMsg = {
-                              id: Date.now().toString() + "-agent",
-                              sender: "agent",
-                              content: agentResponse,
-                              timestamp: new Date(),
-                            };
-
-                            setMessages((prev) => [...prev, agentMsg]);
-
-                            if (res?.data?.sessionId) {
-                              setSessionId(res.data.sessionId);
-                              localStorage.setItem(
-                                "currentSessionId",
-                                res.data.sessionId
-                              );
-                            }
-
-                            setIsTyping(false);
-                          } catch (error) {
-                            console.error(
-                              "Error starting session from recommendation:",
-                              error
-                            );
-                            setIsTyping(false);
-                          }
-                        }}
-                      >
-                        <h3 className="text-base font-semibold text-white mb-1">
-                          {r.title}
-                        </h3>
-
-                        <p className="text-sm text-slate-400 mb-2">
-                          {r.reasoning}
-                        </p>
-
-                        <div className="text-xs text-slate-400 space-y-1 mb-2">
-                          <p>
-                            <strong>Cost:</strong> {r.estimated_cost}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
+                {isTyping ? (
+                  <div className="mt-6 text-slate-300 text-sm">
+                    Generating recommendations for you...
                   </div>
+                ) : (
+                  recommendations.length > 0 && (
+                    <div className="w-full max-w-7xl px-4 flex flex-wrap justify-center gap-4">
+                      {recommendations.slice(0, 6).map((r, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.03 }}
+                          className="flex flex-col w-[300px] bg-slate-800 border border-slate-700 rounded-xl p-4 shadow hover:shadow-amber-500/20 transition-all"
+                        >
+                          <h3 className="text-base font-semibold text-white mb-1">
+                            {r.title}
+                          </h3>
+
+                          <p className="text-sm text-slate-400 mb-2">
+                            {r.reasoning}
+                          </p>
+
+                          <div className="text-xs text-slate-400 space-y-1 mb-2">
+                            <p>
+                              <strong>Cost:</strong> {r.estimated_cost}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )
                 )}
               </motion.div>
             ) : (
