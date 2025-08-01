@@ -7,13 +7,17 @@ import {
   deleteUserById,
   getUserDashboard,
   updateUserById,
-  updateUserSocialHandles,
   updateUserSocialHandlesDirect,
   UserResponse,
   storePersona,
   deleteUserPersonas,
 } from "../../api";
-import { generatePersona, scrapeInstagram, scrapeLinkedIn, scrapeTwitter } from "../../api/persona";
+import {
+  generatePersona,
+  scrapeInstagram,
+  scrapeLinkedIn,
+  scrapeTwitter,
+} from "../../api/persona";
 import {
   Star,
   Activity,
@@ -26,9 +30,10 @@ import {
   Target,
   Zap,
   Edit,
-  Trash2,
+  X,
   Mail,
   Phone,
+  Trash2,
   User,
   Crown,
   Plus,
@@ -36,53 +41,39 @@ import {
 
 // Utility functions for persona generation
 const clearPersonaStatus = () => {
-  localStorage.removeItem('personaGenerationStatus');
-  localStorage.removeItem('personaGenerationTime');
+  localStorage.removeItem("personaGenerationStatus");
+  localStorage.removeItem("personaGenerationTime");
 };
 
 // Retry mechanism for failed API calls
-const retryApiCall = async (
-  apiCall: () => Promise<any>,
-  maxRetries: number = 3,
-  delay: number = 1000
-): Promise<any> => {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await apiCall();
-    } catch (error) {
-      console.warn(`⚠️ API call attempt ${attempt} failed:`, error);
-      if (attempt === maxRetries) {
-        throw error;
-      }
-      // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, delay * attempt));
-    }
-  }
-  throw new Error('Max retries exceeded');
-};
 
 // Simple notification system
-const showNotification = (message: string, type: 'success' | 'info' | 'error' = 'info') => {
+const showNotification = (
+  message: string,
+  type: "success" | "info" | "error" = "info"
+) => {
   // Create notification element
-  const notification = document.createElement('div');
+  const notification = document.createElement("div");
   notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
-    type === 'success' ? 'bg-green-500 text-white' :
-    type === 'error' ? 'bg-red-500 text-white' :
-    'bg-amber-500 text-slate-900'
+    type === "success"
+      ? "bg-green-500 text-white"
+      : type === "error"
+      ? "bg-red-500 text-white"
+      : "bg-amber-500 text-slate-900"
   }`;
   notification.textContent = message;
-  
+
   // Add to DOM
   document.body.appendChild(notification);
-  
+
   // Animate in
   setTimeout(() => {
-    notification.classList.remove('translate-x-full');
+    notification.classList.remove("translate-x-full");
   }, 100);
-  
+
   // Remove after 5 seconds
   setTimeout(() => {
-    notification.classList.add('translate-x-full');
+    notification.classList.add("translate-x-full");
     setTimeout(() => {
       document.body.removeChild(notification);
     }, 300);
@@ -99,18 +90,18 @@ const generatePersonaInBackground = async (
 ) => {
   try {
     console.log("🔄 Starting background persona generation...");
-    
+
     // Set generation status in localStorage
-    localStorage.setItem('personaGenerationStatus', 'generating');
-    
+    localStorage.setItem("personaGenerationStatus", "generating");
+
     // Step 1: Generate AI Persona
     const aiPersona = await generatePersona(platform, username, profileData);
     console.log("✅ AI Persona generated:", aiPersona);
-    
+
     // Store in localStorage immediately (this always works)
     localStorage.setItem("aiPersona", JSON.stringify(aiPersona));
     console.log("✅ Persona stored in localStorage");
-    
+
     // Step 2: Try to store persona in API (with retry logic)
     let apiStored = false;
     try {
@@ -123,8 +114,11 @@ const generatePersonaInBackground = async (
       console.log("✅ Persona stored in API successfully");
       apiStored = true;
     } catch (apiError) {
-      console.warn("⚠️ Failed to store persona in API, but persona is available locally:", apiError);
-      
+      console.warn(
+        "⚠️ Failed to store persona in API, but persona is available locally:",
+        apiError
+      );
+
       // Try alternative API call format
       try {
         await storePersona({
@@ -139,38 +133,49 @@ const generatePersonaInBackground = async (
         console.warn("⚠️ Alternative API call also failed:", retryError);
       }
     }
-    
+
     // Update generation status
-    localStorage.setItem('personaGenerationStatus', apiStored ? 'completed' : 'completed_local');
-    localStorage.setItem('personaGenerationTime', new Date().toISOString());
-    
+    localStorage.setItem(
+      "personaGenerationStatus",
+      apiStored ? "completed" : "completed_local"
+    );
+    localStorage.setItem("personaGenerationTime", new Date().toISOString());
+
     // Show appropriate notification
     if (apiStored) {
-      showNotification('🎉 Your AI persona is ready! Your experience is now personalized.', 'success');
+      showNotification(
+        "🎉 Your AI persona is ready! Your experience is now personalized.",
+        "success"
+      );
     } else {
-      showNotification('🎉 AI persona generated locally! (Backend storage pending)', 'info');
+      showNotification(
+        "🎉 AI persona generated locally! (Backend storage pending)",
+        "info"
+      );
     }
-    
+
     // Call completion callback to refresh dashboard
     if (onComplete) {
       onComplete();
     }
-    
+
     // Clear status after 10 seconds
     setTimeout(() => {
       clearPersonaStatus();
     }, 10000);
-    
   } catch (err) {
     console.error("❌ Failed to generate persona:", err);
-    localStorage.setItem('personaGenerationStatus', 'failed');
-    showNotification('❌ Failed to generate persona. You can try again later.', 'error');
-    
+    localStorage.setItem("personaGenerationStatus", "failed");
+    showNotification(
+      "❌ Failed to generate persona. You can try again later.",
+      "error"
+    );
+
     // Call completion callback even on error to refresh dashboard
     if (onComplete) {
       onComplete();
     }
-    
+
     // Clear status after 10 seconds
     setTimeout(() => {
       clearPersonaStatus();
@@ -234,8 +239,12 @@ const ProfileTab: React.FC = () => {
   // Periodically check for persona generation status and refresh dashboard
   useEffect(() => {
     const checkPersonaStatus = () => {
-      const status = localStorage.getItem('personaGenerationStatus');
-      if (status === 'completed' || status === 'completed_local' || status === 'failed') {
+      const status = localStorage.getItem("personaGenerationStatus");
+      if (
+        status === "completed" ||
+        status === "completed_local" ||
+        status === "failed"
+      ) {
         // Refresh dashboard to show updated social handles
         fetchDashboard();
         // Clear the status after a short delay
@@ -322,12 +331,15 @@ const ProfileTab: React.FC = () => {
       console.log(`✅ ${platform} scrape result:`, data);
 
       // Store platform data
-      setPlatformData(prev => ({ ...prev, [platform]: data }));
+      setPlatformData((prev) => ({ ...prev, [platform]: data }));
 
       setConnected((prev) => ({ ...prev, [platform]: true }));
     } catch (err) {
       console.error(`❌ Error scraping ${platform}:`, err);
-      showNotification(`❌ Failed to connect ${platform}. Please check the username and try again.`, 'error');
+      showNotification(
+        `❌ Failed to connect ${platform}. Please check the username and try again.`,
+        "error"
+      );
     } finally {
       setLoadingPlatform(null);
     }
@@ -344,7 +356,10 @@ const ProfileTab: React.FC = () => {
         : "Twitter";
 
       const username =
-        socialHandles.instagram || socialHandles.linkedin || socialHandles.twitter || "";
+        socialHandles.instagram ||
+        socialHandles.linkedin ||
+        socialHandles.twitter ||
+        "";
 
       const profileData = platformData[platform.toLowerCase()] || [];
 
@@ -354,11 +369,20 @@ const ProfileTab: React.FC = () => {
       });
 
       // Show immediate notification
-      showNotification('🚀 Generating your personalized AI persona in the background...', 'info');
+      showNotification(
+        "🚀 Generating your personalized AI persona in the background...",
+        "info"
+      );
 
       // Start background persona generation
       if (user?.user_id) {
-        generatePersonaInBackground(platform, username, profileData, user.user_id, fetchDashboard);
+        generatePersonaInBackground(
+          platform,
+          username,
+          profileData,
+          user.user_id,
+          fetchDashboard
+        );
       }
 
       // Close modal immediately
@@ -371,7 +395,10 @@ const ProfileTab: React.FC = () => {
       await fetchDashboard();
     } catch (err) {
       console.error("❌ Failed to start persona generation:", err);
-      showNotification('❌ Failed to start persona generation. Please try again.', 'error');
+      showNotification(
+        "❌ Failed to start persona generation. Please try again.",
+        "error"
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -382,15 +409,17 @@ const ProfileTab: React.FC = () => {
       // Get current social handles from dashboard
       const currentHandles = dashboard?.data?.profile?.social_handles || {};
       const updatedHandles = { ...currentHandles };
-      
+
       // Get the username for the platform being deleted
-      const deletedUsername = currentHandles[platform as keyof typeof currentHandles];
-      
+      const deletedUsername =
+        currentHandles[platform as keyof typeof currentHandles];
+
       // Remove the specific platform
       delete updatedHandles[platform as keyof typeof updatedHandles];
 
       // If no social handles left, set to null or empty object based on server preference
-      const finalHandles = Object.keys(updatedHandles).length === 0 ? null : updatedHandles;
+      const finalHandles =
+        Object.keys(updatedHandles).length === 0 ? null : updatedHandles;
 
       // Get user ID
       const userId = localStorage.getItem("userId");
@@ -398,7 +427,12 @@ const ProfileTab: React.FC = () => {
         throw new Error("User ID not found");
       }
 
-      console.log("🔄 Deleting social handle:", { userId, platform, deletedUsername, finalHandles });
+      console.log("🔄 Deleting social handle:", {
+        userId,
+        platform,
+        deletedUsername,
+        finalHandles,
+      });
 
       // Step 1: Delete persona for this platform if username exists
       let personaDeleted = false;
@@ -406,7 +440,7 @@ const ProfileTab: React.FC = () => {
         try {
           const personaResponse = await deleteUserPersonas(userId, platform);
           console.log("✅ Persona deletion response:", personaResponse.data);
-          
+
           // Check if personas were actually deleted (0 is okay if no personas existed)
           if (personaResponse.data.success) {
             personaDeleted = true;
@@ -415,7 +449,10 @@ const ProfileTab: React.FC = () => {
             console.warn("⚠️ No personas found to delete for this platform");
           }
         } catch (personaError) {
-          console.warn("⚠️ Failed to delete persona, continuing with social handles update:", personaError);
+          console.warn(
+            "⚠️ Failed to delete persona, continuing with social handles update:",
+            personaError
+          );
         }
       }
 
@@ -423,57 +460,71 @@ const ProfileTab: React.FC = () => {
       let response;
       try {
         // Try direct database update first (bypasses Pydantic validation)
-        const socialHandlesData = finalHandles === null ? {} : {
-          instagram: finalHandles.instagram || null,
-          linkedin: finalHandles.linkedin || null,
-          twitter: finalHandles.twitter || null,
-        };
-        
-        response = await updateUserSocialHandlesDirect(userId, socialHandlesData);
+        const socialHandlesData =
+          finalHandles === null
+            ? {}
+            : {
+                instagram: finalHandles.instagram || null,
+                linkedin: finalHandles.linkedin || null,
+                twitter: finalHandles.twitter || null,
+              };
+
+        response = await updateUserSocialHandlesDirect(
+          userId,
+          socialHandlesData
+        );
         console.log("✅ Social handles updated successfully:", response.data);
       } catch (apiError) {
         console.error("❌ Direct update failed:", apiError);
-        
+
         // Try the general user update endpoint
         try {
-          const updateData = finalHandles === null ? {} : {
-            social_handles: {
-              instagram: finalHandles.instagram || null,
-              linkedin: finalHandles.linkedin || null,
-              twitter: finalHandles.twitter || null,
-            }
-          };
-          
+          const updateData =
+            finalHandles === null
+              ? {}
+              : {
+                  social_handles: {
+                    instagram: finalHandles.instagram || null,
+                    linkedin: finalHandles.linkedin || null,
+                    twitter: finalHandles.twitter || null,
+                  },
+                };
+
           response = await updateUserById(userId, updateData);
           console.log("✅ General endpoint successful:", response.data);
         } catch (fallbackError) {
           console.error("❌ General endpoint also failed:", fallbackError);
-          
+
           // Try with empty social handles
           try {
             response = await updateUserById(userId, {
               social_handles: {},
             });
-            console.log("✅ Empty social handles update successful:", response.data);
+            console.log(
+              "✅ Empty social handles update successful:",
+              response.data
+            );
           } catch (finalError) {
             console.error("❌ All attempts failed:", finalError);
-            
+
             // TEMPORARY WORKAROUND: Update local state only
-            console.log("⚠️ Using temporary local-only update due to backend issue");
-            
+            console.log(
+              "⚠️ Using temporary local-only update due to backend issue"
+            );
+
             // Update local user state with the new social handles
             const currentUser = user || {};
             const updatedUser = {
               ...currentUser,
               social_handles: finalHandles,
             };
-            
+
             // Update local state
             updateUser(updatedUser);
-            
+
             // Force refresh dashboard data to reflect changes
             await fetchDashboard();
-            
+
             // Also update the dashboard state directly to ensure UI updates
             if (dashboard?.data?.profile) {
               setDashboard((prev: any) => ({
@@ -492,15 +543,18 @@ const ProfileTab: React.FC = () => {
                 fetchDashboard();
               }, 100);
             }
-            
+
             // Show warning notification
-            showNotification(`⚠️ ${platform} removed locally (backend update pending)`, 'info');
-            
+            showNotification(
+              `⚠️ ${platform} removed locally (backend update pending)`,
+              "info"
+            );
+
             // Force a re-render to ensure UI updates
             setTimeout(() => {
               fetchDashboard();
             }, 500);
-            
+
             return; // Exit early since we handled it locally
           }
         }
@@ -512,14 +566,14 @@ const ProfileTab: React.FC = () => {
       }
 
       // Show success notification
-      const successMessage = personaDeleted 
+      const successMessage = personaDeleted
         ? `✅ ${platform} account and persona removed successfully`
         : `✅ ${platform} account removed successfully (no persona found)`;
-      showNotification(successMessage, 'success');
+      showNotification(successMessage, "success");
 
       // Refresh dashboard to show updated data
       await fetchDashboard();
-      
+
       // Force UI update by updating dashboard state directly
       if (dashboard?.data?.profile) {
         setDashboard((prev: any) => ({
@@ -535,7 +589,10 @@ const ProfileTab: React.FC = () => {
       }
     } catch (err) {
       console.error("❌ Failed to delete social handle:", err);
-      showNotification(`❌ Failed to remove ${platform} account. Please try again.`, 'error');
+      showNotification(
+        `❌ Failed to remove ${platform} account. Please try again.`,
+        "error"
+      );
     }
   };
 
@@ -601,7 +658,7 @@ const ProfileTab: React.FC = () => {
                 <Crown className="w-4 h-4 text-slate-900" />
               </div>
             </div>
-            
+
             <div className="flex-1 space-y-4">
               <div>
                 <h1 className="text-3xl font-bold text-white mb-2">
@@ -613,20 +670,27 @@ const ProfileTab: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3 text-slate-300">
                   <Mail className="w-4 h-4 text-amber-400" />
-                  <span className="font-medium">{dashboard?.data?.profile?.email || "-"}</span>
+                  <span className="font-medium">
+                    {dashboard?.data?.profile?.email || "-"}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-3 text-slate-300">
                   <Phone className="w-4 h-4 text-amber-400" />
-                  <span className="font-medium">{dashboard?.data?.profile?.phone || "-"}</span>
+                  <span className="font-medium">
+                    {dashboard?.data?.profile.country_code}{" "}
+                    {dashboard?.data?.profile?.phone || "-"}
+                  </span>
                 </div>
                 {dashboard?.data?.profile?.age && (
                   <div className="flex items-center space-x-3 text-slate-300">
                     <User className="w-4 h-4 text-amber-400" />
-                    <span className="font-medium">Age: {dashboard.data.profile.age}</span>
+                    <span className="font-medium">
+                      Age: {dashboard.data.profile.age}
+                    </span>
                   </div>
                 )}
               </div>
@@ -692,15 +756,15 @@ const ProfileTab: React.FC = () => {
               className={`bg-slate-800/30 backdrop-blur-lg border ${item.border} rounded-2xl p-6 hover:scale-105 transition-all duration-200`}
             >
               <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-xl ${item.bg}`}>
-                  {item.icon}
-                </div>
+                <div className={`p-3 rounded-xl ${item.bg}`}>{item.icon}</div>
               </div>
               <div>
                 <p className="text-3xl font-bold text-white mb-1">
                   {item.value}
                 </p>
-                <p className="text-slate-400 text-sm font-medium">{item.label}</p>
+                <p className="text-slate-400 text-sm font-medium">
+                  {item.label}
+                </p>
               </div>
             </div>
           ))}
@@ -715,7 +779,9 @@ const ProfileTab: React.FC = () => {
                 <div className="p-2 bg-amber-400/20 rounded-lg">
                   <Activity className="w-5 h-5 text-amber-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white">Connected Accounts</h3>
+                <h3 className="text-xl font-bold text-white">
+                  Connected Accounts
+                </h3>
               </div>
               <button
                 onClick={() => setShowSocialModal(true)}
@@ -764,8 +830,12 @@ const ProfileTab: React.FC = () => {
                     <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Activity className="w-8 h-8 text-slate-500" />
                     </div>
-                    <p className="text-slate-400 font-medium">No social accounts connected</p>
-                    <p className="text-slate-500 text-sm mt-1">Connect your social media accounts</p>
+                    <p className="text-slate-400 font-medium">
+                      No social accounts connected
+                    </p>
+                    <p className="text-slate-500 text-sm mt-1">
+                      Connect your social media accounts
+                    </p>
                   </div>
                 )}
             </div>
@@ -777,7 +847,7 @@ const ProfileTab: React.FC = () => {
               <div className="p-2 bg-amber-400/20 rounded-lg">
                 <Clock className="w-5 h-5 text-amber-400" />
               </div>
-              <h3 className="text-xl font-bold text-white">Recent Activity</h3>
+              <h3 className="text-xl font-bold text-white">Recent Tickets</h3>
             </div>
 
             <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
@@ -808,8 +878,12 @@ const ProfileTab: React.FC = () => {
                   <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Clock className="w-8 h-8 text-slate-500" />
                   </div>
-                  <p className="text-slate-400 font-medium">No recent activity</p>
-                  <p className="text-slate-500 text-sm mt-1">Your activity will appear here</p>
+                  <p className="text-slate-400 font-medium">
+                    No recent activity
+                  </p>
+                  <p className="text-slate-500 text-sm mt-1">
+                    Your activity will appear here
+                  </p>
                 </div>
               )}
             </div>
@@ -820,7 +894,9 @@ const ProfileTab: React.FC = () => {
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
             <div className="bg-slate-800 rounded-2xl p-8 w-96 border border-slate-700">
-              <h2 className="text-xl font-bold text-white mb-4">Delete Account?</h2>
+              <h2 className="text-xl font-bold text-white mb-4">
+                Delete Account?
+              </h2>
               <p className="text-slate-300 mb-6">
                 Are you sure you want to delete your account? This action cannot
                 be undone.
@@ -873,10 +949,14 @@ const ProfileTab: React.FC = () => {
         {showEditModal && (
           <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
             <div className="bg-slate-800 rounded-2xl p-8 w-96 border border-slate-700">
-              <h2 className="text-xl font-bold text-white mb-6">Edit Profile</h2>
+              <h2 className="text-xl font-bold text-white mb-6">
+                Edit Profile
+              </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Name</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Name
+                  </label>
                   <input
                     type="text"
                     placeholder="Enter your name"
@@ -888,19 +968,26 @@ const ProfileTab: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Email
+                  </label>
                   <input
                     type="email"
                     placeholder="Enter your email"
                     defaultValue={dashboard?.data?.profile?.email || ""}
                     onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, email: e.target.value }))
+                      setEditForm((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
                     }
                     className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:border-amber-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Age</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Age
+                  </label>
                   <input
                     type="number"
                     placeholder="Enter your age"
@@ -915,13 +1002,20 @@ const ProfileTab: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Phone</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Phone
+                  </label>
                   <input
                     type="tel"
                     placeholder="Enter your phone number"
-                    defaultValue={dashboard?.data?.profile?.phone || ""}
+                    defaultValue={`${
+                      dashboard?.data?.profile?.country_code || ""
+                    }${dashboard?.data?.profile?.phone || ""}`}
                     onChange={(e) =>
-                      setEditForm((prev) => ({ ...prev, phone: e.target.value }))
+                      setEditForm((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }))
                     }
                     className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:border-amber-400"
                   />
@@ -952,18 +1046,24 @@ const ProfileTab: React.FC = () => {
           <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
             <div className="bg-slate-800 rounded-2xl p-8 w-96 border border-slate-700 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white">Connect Social Account</h2>
+                <h2 className="text-xl font-bold text-white">
+                  Connect Social Account
+                </h2>
                 <button
                   onClick={() => {
                     setShowSocialModal(false);
                     // Reset modal state when closing
-                    setSocialHandles({ instagram: "", linkedin: "", twitter: "" });
+                    setSocialHandles({
+                      instagram: "",
+                      linkedin: "",
+                      twitter: "",
+                    });
                     setConnected({});
                     setPlatformData({});
                   }}
                   className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
                 >
-                  <Trash2 className="w-5 h-5 text-slate-400" />
+                  <X className="w-5 h-5 text-slate-400" />
                 </button>
               </div>
 
@@ -990,7 +1090,10 @@ const ProfileTab: React.FC = () => {
                     <button
                       className="ml-3 px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 rounded-lg text-slate-900 font-semibold transition disabled:opacity-50"
                       onClick={() => handleConnect("instagram")}
-                      disabled={!socialHandles.instagram || loadingPlatform === "instagram"}
+                      disabled={
+                        !socialHandles.instagram ||
+                        loadingPlatform === "instagram"
+                      }
                     >
                       {connected.instagram
                         ? "Connected"
@@ -1023,7 +1126,10 @@ const ProfileTab: React.FC = () => {
                     <button
                       className="ml-3 px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 rounded-lg text-slate-900 font-semibold transition disabled:opacity-50"
                       onClick={() => handleConnect("linkedin")}
-                      disabled={!socialHandles.linkedin || loadingPlatform === "linkedin"}
+                      disabled={
+                        !socialHandles.linkedin ||
+                        loadingPlatform === "linkedin"
+                      }
                     >
                       {connected.linkedin
                         ? "Connected"
@@ -1056,7 +1162,9 @@ const ProfileTab: React.FC = () => {
                     <button
                       className="ml-3 px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 rounded-lg text-slate-900 font-semibold transition disabled:opacity-50"
                       onClick={() => handleConnect("twitter")}
-                      disabled={!socialHandles.twitter || loadingPlatform === "twitter"}
+                      disabled={
+                        !socialHandles.twitter || loadingPlatform === "twitter"
+                      }
                     >
                       {connected.twitter
                         ? "Connected"
@@ -1070,7 +1178,9 @@ const ProfileTab: React.FC = () => {
                 {/* Info Box */}
                 <div className="bg-slate-900/30 border border-slate-600 rounded-lg p-4">
                   <p className="text-slate-300 text-sm">
-                    <span className="text-amber-400">AI Persona Generation:</span>{" "}
+                    <span className="text-amber-400">
+                      AI Persona Generation:
+                    </span>{" "}
                     We'll analyze your public profiles to understand your style,
                     preferences, and lifestyle to provide hyper-personalized
                     recommendations.
@@ -1080,7 +1190,12 @@ const ProfileTab: React.FC = () => {
                 {/* Generate Button */}
                 <button
                   onClick={handleGeneratePersona}
-                  disabled={isGenerating || (!socialHandles.instagram && !socialHandles.linkedin && !socialHandles.twitter)}
+                  disabled={
+                    isGenerating ||
+                    (!socialHandles.instagram &&
+                      !socialHandles.linkedin &&
+                      !socialHandles.twitter)
+                  }
                   className="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-900 font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50"
                 >
                   {isGenerating ? (

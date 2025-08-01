@@ -1,10 +1,9 @@
-
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { signup, googleSignup } from "../../api";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import countryCodeData from "../../types/country_codes.json";
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,23 +24,25 @@ const SignupPage: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async () => {
     setError("");
-    
+
     // Password validation for non-Google signup
     if (!isGoogleSignup && form.password.length < 6) {
       setError("Password must be at least 6 characters long.");
       return;
     }
-    
+
     setLoading(true);
     try {
       let res;
-      
+
       if (isGoogleSignup && googleData) {
         // Use Google signup API for Google users
         const additionalDetails = {
@@ -50,7 +51,7 @@ const SignupPage: React.FC = () => {
           phone: form.phone || undefined,
           country_code: form.country_code,
         };
-        
+
         res = await googleSignup(googleData, additionalDetails);
       } else {
         // Use regular signup API for email users
@@ -83,7 +84,9 @@ const SignupPage: React.FC = () => {
         });
 
         // Ensure user state is properly set before navigation
-        console.log("✅ User state updated successfully, navigating to social setup");
+        console.log(
+          "✅ User state updated successfully, navigating to social setup"
+        );
         navigate("/social-setup", { replace: true });
       } else {
         console.error("❌ No user ID received from signup");
@@ -97,6 +100,13 @@ const SignupPage: React.FC = () => {
     }
   };
 
+  const countryCodes = Object.entries(countryCodeData).map(
+    ([code, country]) => ({
+      code,
+      label: `${country} (${code})`,
+    })
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -105,7 +115,9 @@ const SignupPage: React.FC = () => {
             kai<span className="text-amber-400">°</span>
           </h1>
           <p className="text-slate-400 text-sm">
-            {isGoogleSignup ? "Complete your profile" : "Sign up for concierge access"}
+            {isGoogleSignup
+              ? "Complete your profile"
+              : "Sign up for concierge access"}
           </p>
           {isGoogleSignup && (
             <p className="text-amber-400 text-sm mt-2">
@@ -133,14 +145,18 @@ const SignupPage: React.FC = () => {
               className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
             <div className="flex gap-2">
-              <input
-                type="text"
+              <select
                 name="country_code"
-                placeholder="+1"
                 value={form.country_code}
                 onChange={handleChange}
-                className="w-20 bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
+                className="w-40 bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                {countryCodes.map(({ code, label }) => (
+                  <option key={code} value={code}>
+                    {code} - {label}
+                  </option>
+                ))}
+              </select>
               <input
                 type="text"
                 name="phone"
