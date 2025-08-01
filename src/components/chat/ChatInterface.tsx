@@ -190,6 +190,7 @@ const ChatInterface: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [personaStatus, setPersonaStatus] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const userId = localStorage.getItem("userId");
@@ -201,6 +202,30 @@ const ChatInterface: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
+
+  // Check persona generation status
+  useEffect(() => {
+    const checkPersonaStatus = () => {
+      const status = localStorage.getItem('personaGenerationStatus');
+      setPersonaStatus(status);
+      
+      // If persona is completed, clear the status
+      if (status === 'completed') {
+        setTimeout(() => {
+          localStorage.removeItem('personaGenerationStatus');
+          setPersonaStatus(null);
+        }, 10000); // Clear after 10 seconds
+      }
+    };
+
+    // Check immediately
+    checkPersonaStatus();
+    
+    // Check every 3 seconds
+    const interval = setInterval(checkPersonaStatus, 3000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   if (!userId) {
     return (
@@ -250,8 +275,8 @@ const ChatInterface: React.FC = () => {
       setSessionId(res.data.sessionId);
       setIsTyping(false);
 
-      if (res.data.sessionEnd) {
-        console.log("Session ended. Ticket ID:", res.data.ticketId);
+      if (res.data.data?.isSessionEnd) {
+        console.log("Session ended. Ticket ID:", res.data.data.ticketId);
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -309,6 +334,38 @@ const ChatInterface: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Persona Generation Status */}
+      {personaStatus === 'generating' && (
+        <div className="bg-amber-500/20 border-b border-amber-500/30 px-4 py-3">
+          <div className="flex items-center justify-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-400"></div>
+            <span className="text-amber-400 text-sm font-medium">
+              Generating your AI persona... This will take a moment.
+            </span>
+          </div>
+        </div>
+      )}
+      
+      {personaStatus === 'completed' && (
+        <div className="bg-green-500/20 border-b border-green-500/30 px-4 py-3">
+          <div className="flex items-center justify-center space-x-2">
+            <span className="text-green-400 text-sm font-medium">
+              ✅ Your AI persona is ready! Your experience is now personalized.
+            </span>
+          </div>
+        </div>
+      )}
+      
+      {personaStatus === 'failed' && (
+        <div className="bg-red-500/20 border-b border-red-500/30 px-4 py-3">
+          <div className="flex items-center justify-center space-x-2">
+            <span className="text-red-400 text-sm font-medium">
+              ❌ Persona generation failed. You can try again later.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

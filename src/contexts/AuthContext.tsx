@@ -6,7 +6,7 @@
 //   ReactNode,
 // } from "react";
 // import { User } from "../types";
-// import { login as loginApi, getUserInfo } from "../api";
+// import { login as loginApi, getUserInfo, updateUserById } from "../api";
 
 // interface AuthContextType {
 //   user: User | null;
@@ -120,13 +120,13 @@ import React, {
   ReactNode,
 } from "react";
 import { User } from "../types";
-import { login as loginApi, getUserInfo } from "../api";
+import { login as loginApi, getUserInfo, updateUserById } from "../api";
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  updateUser: (user: Partial<User>) => void;
+  updateUser: (user: Partial<User>) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -155,11 +155,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
         setIsLoading(false);
         return;
       } catch (err) {
         console.warn("Failed to parse stored user:", err);
+        localStorage.removeItem("user");
       }
     }
 
@@ -211,7 +213,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Update user function
-  const updateUser = (updates: Partial<User>) => {
+  const updateUser = async (updates: Partial<User>) => {
     const merged = { ...(user || {}), ...updates };
 
     if (!merged.user_id) {
@@ -222,10 +224,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     if (merged.user_id) {
-      setUser(merged as User);
-      localStorage.setItem("user", JSON.stringify(merged));
+      try {
+        // Update user in database
+        const response = await updateUserById(merged.user_id, updates);
+        const updatedUserData = response.data.data as User;
+        
+        // Update local state with the response from server
+        setUser(updatedUserData);
+        localStorage.setItem("user", JSON.stringify(updatedUserData));
+        
+        console.log("✅ User updated successfully in database");
+        return updatedUserData;
+      } catch (error) {
+        console.error("❌ Failed to update user in database:", error);
+        // Fallback to local update if API fails
+        setUser(merged as User);
+        localStorage.setItem("user", JSON.stringify(merged));
+        return merged as User;
+      }
     } else {
       console.warn("Incomplete user data, not updating:", merged);
+      return null;
     }
   };
 

@@ -8,7 +8,7 @@ export interface User {
   age?: number | null;
   email?: string;
   avatar?: string;
-  socialHandles?: {
+  social_handles?: {
     instagram?: string;
     linkedin?: string;
     twitter?: string;

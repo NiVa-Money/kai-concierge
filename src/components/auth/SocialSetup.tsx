@@ -1,4 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * SocialSetup Component
+ * 
+ * This component handles social media profile connection and AI persona generation.
+ * 
+ * Background Persona Generation Flow:
+ * 1. User enters social media handles and clicks "Continue to Kai"
+ * 2. User is immediately redirected to the chat interface
+ * 3. Persona generation starts in the background
+ * 4. User sees a status indicator in the chat interface
+ * 5. When complete, user gets a notification and the status clears
+ * 
+ * Status Management:
+ * - Uses localStorage to track generation status ('generating', 'completed', 'failed')
+ * - Status is checked every 3 seconds in the chat interface
+ * - Status automatically clears after 10 seconds when completed/failed
+ * 
+ * Notifications:
+ * - Immediate notification when redirecting
+ * - Success notification when persona is ready
+ * - Error notification if generation fails
+ */
+
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import {
@@ -12,6 +35,93 @@ import { Instagram, Linkedin, Twitter, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { User } from "../../types";
 
+// Utility functions for persona generation
+const clearPersonaStatus = () => {
+  localStorage.removeItem('personaGenerationStatus');
+  localStorage.removeItem('personaGenerationTime');
+};
+
+// Simple notification system
+const showNotification = (message: string, type: 'success' | 'info' | 'error' = 'info') => {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
+    type === 'success' ? 'bg-green-500 text-white' :
+    type === 'error' ? 'bg-red-500 text-white' :
+    'bg-amber-500 text-slate-900'
+  }`;
+  notification.textContent = message;
+  
+  // Add to DOM
+  document.body.appendChild(notification);
+  
+  // Animate in
+  setTimeout(() => {
+    notification.classList.remove('translate-x-full');
+  }, 100);
+  
+  // Remove after 5 seconds
+  setTimeout(() => {
+    notification.classList.add('translate-x-full');
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 5000);
+};
+
+// Background persona generation function
+const generatePersonaInBackground = async (
+  platform: "LinkedIn" | "Twitter" | "Instagram",
+  username: string,
+  profileData: any[],
+  userId: string
+) => {
+  try {
+    console.log("🔄 Starting background persona generation...");
+    
+    // Set generation status in localStorage
+    localStorage.setItem('personaGenerationStatus', 'generating');
+    
+    const aiPersona = await generatePersona(platform, username, profileData);
+    console.log("✅ AI Persona generated:", aiPersona);
+    
+    // Store in localStorage
+    localStorage.setItem("aiPersona", JSON.stringify(aiPersona));
+    
+    // Store persona in API
+    await storePersona({
+      userId: userId,
+      platform: platform,
+      username: username,
+      profileData: aiPersona,
+    });
+    
+    console.log("✅ Persona stored in API successfully");
+    
+    // Update generation status
+    localStorage.setItem('personaGenerationStatus', 'completed');
+    localStorage.setItem('personaGenerationTime', new Date().toISOString());
+    
+    // Show success notification
+    showNotification('🎉 Your AI persona is ready! Your experience is now personalized.', 'success');
+    
+    // Clear status after 10 seconds
+    setTimeout(() => {
+      clearPersonaStatus();
+    }, 10000);
+    
+  } catch (err) {
+    console.error("❌ Failed to generate persona:", err);
+    localStorage.setItem('personaGenerationStatus', 'failed');
+    showNotification('❌ Failed to generate persona. You can try again later.', 'error');
+    
+    // Clear status after 10 seconds
+    setTimeout(() => {
+      clearPersonaStatus();
+    }, 10000);
+  }
+};
+
 const SocialSetup: React.FC = () => {
   const { user, updateUser, isLoading } = useAuth();
   const [handles, setHandles] = useState({
@@ -22,12 +132,19 @@ const SocialSetup: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingPlatform, setLoadingPlatform] = useState<null | string>(null);
   const [connected, setConnected] = useState<Record<string, boolean>>({});
-
   const navigate = useNavigate();
+  
+  // Effect to handle user state changes and prevent race conditions
+  React.useEffect(() => {
+    if (!isLoading && !user) {
+      console.log("SocialSetup - No user found after loading, redirecting to login");
+      navigate("/login", { replace: true });
+    }
+  }, [isLoading, user, navigate]);
   
   // Debug: Log user state
   console.log("SocialSetup - User state:", user);
-  console.log("SocialSetup - User social handles:", user?.socialHandles);
+      console.log("SocialSetup - User social handles:", user?.social_handles);
   
   // Show loading state while user is being loaded
   if (isLoading) {
@@ -41,10 +158,16 @@ const SocialSetup: React.FC = () => {
     );
   }
 
-  // Redirect to login if no user
+  // If no user after loading, show loading while useEffect handles redirect
   if (!user) {
-    navigate("/login", { replace: true });
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
+          <p className="text-slate-400">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
   const handleConnect = async (
     platform: "instagram" | "linkedin" | "twitter"
@@ -95,47 +218,39 @@ const SocialSetup: React.FC = () => {
       const dataKey = `${platform.toLowerCase()}Data` as keyof User;
       const profileData = (user?.[dataKey] as any[]) ?? [];
 
-      const aiPersona = await generatePersona(platform, username, profileData);
-      console.log("AI Persona generated:", aiPersona);
-      localStorage.setItem("aiPersona", JSON.stringify(aiPersona));
-
-      // Store persona in API with social media information
-      if (user?.user_id) {
-        try {
-          await storePersona({
-            userId: user.user_id,
-            platform: platform,
-            username: username,
-            profileData: aiPersona,
+                // Update user with social handles immediately
+          await updateUser({
+            social_handles: handles,
           });
-          console.log("✅ Persona stored in API successfully");
-        } catch (error) {
-          console.error("❌ Failed to store persona in API:", error);
-        }
+
+      // Show immediate notification
+      showNotification('🚀 Redirecting you to Kai while we generate your personalized AI persona...', 'info');
+
+      // Start background persona generation
+      if (user?.user_id) {
+        generatePersonaInBackground(platform, username, profileData, user.user_id);
       }
 
-      updateUser({
-        socialHandles: handles,
-        personaReport: aiPersona,
-      });
-
+      // Immediately redirect to chat
       navigate("/chat", { replace: true });
     } catch (err) {
-      console.error("❌ Failed to generate persona:", err);
-    } finally {
+      console.error("❌ Failed to start persona generation:", err);
       setIsGenerating(false);
+      showNotification('❌ Failed to start persona generation. Please try again.', 'error');
     }
   };
 
   // Only redirect if user has completed social setup and has a persona
   if (
-    user?.socialHandles?.instagram ||
-    user?.socialHandles?.linkedin ||
-    user?.socialHandles?.twitter
+          user?.social_handles?.instagram ||
+        user?.social_handles?.linkedin ||
+        user?.social_handles?.twitter
   ) {
     // Check if user already has a persona, if so redirect to chat
     const aiPersona = localStorage.getItem("aiPersona");
     if (aiPersona) {
+      // Clear any pending persona generation status
+      clearPersonaStatus();
       navigate("/chat", { replace: true });
       return null;
     }
@@ -283,14 +398,14 @@ const SocialSetup: React.FC = () => {
             </button>
 
             {/* Skip */}
-            <div className="text-center">
+            {/* <div className="text-center">
               <button
                 onClick={() => navigate("/chat")}
                 className="text-slate-400 text-sm hover:text-white transition-colors"
               >
                 Skip for now
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

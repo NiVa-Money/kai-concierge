@@ -75,15 +75,20 @@ const SignupPage: React.FC = () => {
         localStorage.setItem("userId", userId);
 
         // Update AuthContext user with complete profile
-        updateUser({
+        await updateUser({
           user_id: userId,
           name: form.name,
           email: form.email,
           age: form.age ? parseInt(form.age) : undefined,
         });
-      }
 
-      navigate("/social-setup");
+        // Ensure user state is properly set before navigation
+        console.log("✅ User state updated successfully, navigating to social setup");
+        navigate("/social-setup", { replace: true });
+      } else {
+        console.error("❌ No user ID received from signup");
+        setError("Failed to create account. Please try again.");
+      }
     } catch (err: any) {
       setError("Signup failed. Email might already be registered.");
       console.error(err);

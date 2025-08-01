@@ -22,12 +22,12 @@ const LoginPage: React.FC = () => {
       if (result.type === "login" && result.user_id) {
         // Existing user -> go directly to chat
         localStorage.setItem("userId", result.user_id);
-        updateUser({
+        await updateUser({
           user_id: result.user_id,
           name: result.name,
           email: result.email,
         });
-        navigate("/chat");
+        navigate("/chat", { replace: true });
       } else if (result.type === "signup") {
         // New Google user -> Signup with prefilled fields
         navigate("/signup", {
@@ -59,13 +59,13 @@ const LoginPage: React.FC = () => {
       localStorage.setItem("userId", userId);
 
       const profile = await getUserInfo(userId);
-      updateUser(profile.data.data);
+      await updateUser(profile.data.data);
 
       const aiPersona = localStorage.getItem("aiPersona");
       if (aiPersona) {
-        navigate("/chat");
+        navigate("/chat", { replace: true });
       } else {
-        navigate("/social-setup");
+        navigate("/social-setup", { replace: true });
       }
     } catch (err: any) {
       console.error(err);

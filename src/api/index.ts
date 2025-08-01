@@ -90,6 +90,11 @@ export interface UserResponse {
   age: number;
   email: string;
   user_id: string;
+  social_handles?: {
+    instagram?: string;
+    linkedin?: string;
+    twitter?: string;
+  };
 }
 
 export interface Ticket {
@@ -443,8 +448,26 @@ export const updateUserById = (
   updatedData: Partial<UserResponse>
 ) => api.put<{ data: UserResponse }>(`/api/v1/users/${userId}`, updatedData);
 
+export const updateUserSocialHandles = (
+  userId: string,
+  socialHandles: {
+    instagram?: string | null;
+    linkedin?: string | null;
+    twitter?: string | null;
+  }
+) => api.put<{ data: any }>(`/api/v1/users/${userId}/social-handles`, socialHandles);
+
+// Direct database update bypassing Pydantic validation
+export const updateUserSocialHandlesDirect = (
+  userId: string,
+  socialHandles: any
+) => api.put<{ data: any }>(`/api/v1/users/${userId}`, { social_handles: socialHandles });
+
 export const deleteUserById = (userId: string) =>
   api.delete<{ success: boolean }>(`/api/v1/users/${userId}`);
+
+export const deleteUserPersonas = (userId: string, platform?: string) =>
+  api.delete<{ success: boolean }>(`/api/v1/personas/user/${userId}${platform ? `?platform=${platform}` : ''}`);
 
 export const getUserDashboard = (userId: string) =>
   api.get<{ data: any }>(`/api/v1/users/${userId}/dashboard`);
