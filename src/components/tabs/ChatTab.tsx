@@ -8,6 +8,7 @@ import {
 } from "../../api";
 import { Send, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatMessage } from "../../utils/messageFormatter";
 
 const ChatTab: React.FC = () => {
   const [input, setInput] = useState("");
@@ -206,20 +207,6 @@ const ChatTab: React.FC = () => {
       );
       setIsTyping(false);
     }
-  };
-
-  const formatMessage = (content: string) => {
-    return content.split("\n").map((line, index) =>
-      line.startsWith("•") ? (
-        <li key={index} className="ml-4 text-slate-300">
-          {line.substring(1).trim()}
-        </li>
-      ) : (
-        <p key={index} className="mb-2 last:mb-0">
-          {line}
-        </p>
-      )
-    );
   };
 
   return (

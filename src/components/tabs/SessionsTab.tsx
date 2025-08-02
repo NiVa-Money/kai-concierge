@@ -22,6 +22,7 @@ import {
   Square,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatMessage } from "../../utils/messageFormatter";
 
 const SessionsTab: React.FC = () => {
   const [sessions, setSessions] = useState<SessionResponse[]>([]);
@@ -240,23 +241,6 @@ const SessionsTab: React.FC = () => {
       " " +
       date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     );
-  };
-
-  const formatMessage = (content: string) => {
-    return content.split("\n").map((line, index) => {
-      if (line.startsWith("•")) {
-        return (
-          <li key={index} className="ml-4 text-slate-300">
-            {line.substring(1).trim()}
-          </li>
-        );
-      }
-      return (
-        <p key={index} className="mb-2 last:mb-0">
-          {line}
-        </p>
-      );
-    });
   };
 
   const filteredSessions = sessions.filter((session) =>
