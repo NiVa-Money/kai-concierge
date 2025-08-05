@@ -6,9 +6,11 @@ import {
   getPersonaRecommendations,
   getSessionDetails,
 } from "../../api";
-import { Send, Crown } from "lucide-react";
+import { Send, Crown, Mic } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatMessage } from "../../utils/messageFormatter";
+
+let recognitionInstance: any = null;
 
 const ChatTab: React.FC = () => {
   const [input, setInput] = useState("");
@@ -20,6 +22,7 @@ const ChatTab: React.FC = () => {
 
   const userId = localStorage.getItem("userId");
   const aiPersona = JSON.parse(localStorage.getItem("aiPersona") || "{}");
+  const [isListening, setIsListening] = useState(false);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -158,6 +161,61 @@ const ChatTab: React.FC = () => {
     }
   };
 
+  const handleMicClick = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+
+    // If already listening, stop recognition
+    if (isListening && recognitionInstance) {
+      recognitionInstance.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionInstance = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      console.log("Voice recognition started");
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionInstance = null;
+      console.log("Voice recognition ended");
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error", event);
+      setIsListening(false);
+      recognitionInstance = null;
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript.trim();
+      if (transcript) {
+        setInput("");
+        const syntheticEvent = {
+          preventDefault: () => {},
+        } as React.FormEvent;
+        setInput(transcript);
+        setTimeout(() => handleSubmit(syntheticEvent), 100);
+      }
+    };
+
+    recognition.start();
+  };
+
   const handleCardClick = async (recommendation: any) => {
     if (!userId) return;
 
@@ -260,10 +318,10 @@ const ChatTab: React.FC = () => {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.05 }}
-                          whileHover={{ 
-                            scale: 1.02, 
+                          whileHover={{
+                            scale: 1.02,
                             y: -2,
-                            transition: { duration: 0.2, ease: "easeOut" }
+                            transition: { duration: 0.2, ease: "easeOut" },
                           }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleCardClick(r)}
@@ -278,7 +336,8 @@ const ChatTab: React.FC = () => {
                           </p>
 
                           <div className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors duration-300">
-                            <span className="font-medium">Cost:</span> {r.estimated_cost}
+                            <span className="font-medium">Cost:</span>{" "}
+                            {r.estimated_cost}
                           </div>
                         </motion.div>
                       ))}
@@ -362,13 +421,6 @@ const ChatTab: React.FC = () => {
           <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
             <div className="relative">
               <div className="flex items-center space-x-3 bg-slate-900/50 border border-slate-700/50 rounded-xl p-3 hover:border-slate-600 transition-colors">
-                {/* <button
-                  type="button"
-                  className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors"
-                >
-                  <Mic className="w-6 h-6 text-slate-400" />
-                </button> */}
-
                 <input
                   type="text"
                   value={input}
@@ -376,6 +428,27 @@ const ChatTab: React.FC = () => {
                   placeholder="How may I assist you today?"
                   className="flex-1 bg-transparent text-white placeholder-slate-400 focus:outline-none"
                 />
+                <div className="relative flex items-center">
+                  <button
+                    type="button"
+                    onClick={handleMicClick}
+                    className={`p-2 rounded-lg transition-colors ${
+                      isListening ? "bg-amber-400/20" : "hover:bg-slate-700/50"
+                    }`}
+                  >
+                    <Mic
+                      className={`w-6 h-6 ${
+                        isListening ? "text-amber-400" : "text-slate-400"
+                      }`}
+                    />
+                  </button>
+
+                  {isListening && (
+                    <div className="absolute -top-9 left-1/2 -translate-x-1/2 px-2 py-1 text-xs text-white bg-slate-800 border border-slate-600 rounded shadow-md">
+                      Listening...
+                    </div>
+                  )}
+                </div>
 
                 <button
                   type="submit"
@@ -389,14 +462,14 @@ const ChatTab: React.FC = () => {
           </form>
 
           {/* ElevenLabs Widget */}
-          <div className="mt-3">
+          {/* <div className="mt-3">
             <elevenlabs-convai agent-id="agent_01k0peh8sbfg0vmp2zmt3emk36"></elevenlabs-convai>
             <script
               src="https://unpkg.com/@elevenlabs/convai-widget-embed"
               async
               type="text/javascript"
             ></script>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
