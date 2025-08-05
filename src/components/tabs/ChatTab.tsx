@@ -10,7 +10,7 @@ import { Send, Crown, Mic } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatMessage } from "../../utils/messageFormatter";
 
-let recognitionInstance: any = null;
+// const recognitionInstance: any = null;
 
 const ChatTab: React.FC = () => {
   const [input, setInput] = useState("");
@@ -19,6 +19,10 @@ const ChatTab: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
+    null
+  );
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
   const userId = localStorage.getItem("userId");
   const aiPersona = JSON.parse(localStorage.getItem("aiPersona") || "{}");
@@ -161,60 +165,112 @@ const ChatTab: React.FC = () => {
     }
   };
 
-  const handleMicClick = () => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      alert("Speech recognition is not supported in this browser.");
-      return;
-    }
-
-    // If already listening, stop recognition
-    if (isListening && recognitionInstance) {
-      recognitionInstance.stop();
+  const handleMicClick = async () => {
+    if (isListening && mediaRecorder) {
+      mediaRecorder.stop();
       setIsListening(false);
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognitionInstance = recognition;
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = "en-US";
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      setAudioChunks([]);
 
-    recognition.onstart = () => {
-      setIsListening(true);
-      console.log("Voice recognition started");
-    };
+      recorder.onstart = () => {
+        setIsListening(true);
+        console.log("🎙️ Recording started");
+      };
 
-    recognition.onend = () => {
-      setIsListening(false);
-      recognitionInstance = null;
-      console.log("Voice recognition ended");
-    };
+      recorder.ondataavailable = (e) => {
+        setAudioChunks((prev) => [...prev, e.data]);
+      };
 
-    recognition.onerror = (event: any) => {
-      console.error("Speech recognition error", event);
-      setIsListening(false);
-      recognitionInstance = null;
-    };
+      recorder.onstop = async () => {
+        setIsListening(false);
+        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        const audioUrl = URL.createObjectURL(audioBlob);
 
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript.trim();
-      if (transcript) {
-        setInput("");
-        const syntheticEvent = {
-          preventDefault: () => {},
-        } as React.FormEvent;
-        setInput(transcript);
-        setTimeout(() => handleSubmit(syntheticEvent), 100);
-      }
-    };
+        const audioDuration = await new Promise<number>((resolve) => {
+          const tempAudio = new Audio(audioUrl);
+          tempAudio.addEventListener("loadedmetadata", () => {
+            resolve(tempAudio.duration);
+          });
+        });
 
-    recognition.start();
+        const userMsg = {
+          id: Date.now().toString(),
+          sender: "user",
+          content: `Voice note (${Math.round(audioDuration)}s)`,
+          audio: audioUrl,
+          timestamp: new Date(),
+        };
+
+        setMessages((prev) => [...prev, userMsg]);
+      };
+
+      recorder.start();
+    } catch (err) {
+      console.error("Mic access denied or error:", err);
+      alert("Microphone access is required to send voice notes.");
+    }
   };
+
+  // const handleMicClick = () => {
+  //   const SpeechRecognition =
+  //     (window as any).SpeechRecognition ||
+  //     (window as any).webkitSpeechRecognition;
+
+  //   if (!SpeechRecognition) {
+  //     alert("Speech recognition is not supported in this browser.");
+  //     return;
+  //   }
+
+  //   // If already listening, stop recognition
+  //   if (isListening && recognitionInstance) {
+  //     recognitionInstance.stop();
+  //     setIsListening(false);
+  //     return;
+  //   }
+
+  //   const recognition = new SpeechRecognition();
+  //   recognitionInstance = recognition;
+  //   recognition.continuous = false;
+  //   recognition.interimResults = false;
+  //   recognition.lang = "en-US";
+
+  //   recognition.onstart = () => {
+  //     setIsListening(true);
+  //     console.log("Voice recognition started");
+  //   };
+
+  //   recognition.onend = () => {
+  //     setIsListening(false);
+  //     recognitionInstance = null;
+  //     console.log("Voice recognition ended");
+  //   };
+
+  //   recognition.onerror = (event: any) => {
+  //     console.error("Speech recognition error", event);
+  //     setIsListening(false);
+  //     recognitionInstance = null;
+  //   };
+
+  //   recognition.onresult = (event: any) => {
+  //     const transcript = event.results[0][0].transcript.trim();
+  //     if (transcript) {
+  //       setInput("");
+  //       const syntheticEvent = {
+  //         preventDefault: () => {},
+  //       } as React.FormEvent;
+  //       setInput(transcript);
+  //       setTimeout(() => handleSubmit(syntheticEvent), 100);
+  //     }
+  //   };
+
+  //   recognition.start();
+  // };
 
   const handleCardClick = async (recommendation: any) => {
     if (!userId) return;
@@ -346,7 +402,7 @@ const ChatTab: React.FC = () => {
                 )}
               </motion.div>
             ) : (
-              <div className="space-y-4">
+              <div className="mt-4 space-y-4">
                 {messages.map((msg) => (
                   <motion.div
                     key={msg.id}
@@ -357,44 +413,29 @@ const ChatTab: React.FC = () => {
                     }`}
                   >
                     <div
-                      className={`max-w-2xl p-4 rounded-xl ${
+                      className={`max-w-2xl p-4 rounded-xl space-y-2 ${
                         msg.sender === "user"
                           ? "bg-amber-400/10 text-amber-300 border border-amber-400/20"
                           : "bg-slate-800/50 text-white border border-slate-700"
                       }`}
                     >
-                      {formatMessage(msg.content)}
+                      {msg.audio ? (
+                        <div className="space-y-1">
+                          <audio
+                            controls
+                            src={msg.audio}
+                            className="w-full max-w-xs rounded-md"
+                          />
+                          <p className="text-xs text-slate-400 italic">
+                            {msg.content}
+                          </p>
+                        </div>
+                      ) : (
+                        formatMessage(msg.content)
+                      )}
                     </div>
                   </motion.div>
                 ))}
-
-                {isTyping && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex justify-start"
-                  >
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"></div>
-                          <div
-                            className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
-                            style={{ animationDelay: "0.1s" }}
-                          ></div>
-                          <div
-                            className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
-                            style={{ animationDelay: "0.2s" }}
-                          ></div>
-                        </div>
-                        <span className="text-slate-400 text-sm">
-                          Your concierge is attending...
-                        </span>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-                <div ref={messagesEndRef} />
               </div>
             )}
           </AnimatePresence>

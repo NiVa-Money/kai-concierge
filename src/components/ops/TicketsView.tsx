@@ -38,6 +38,13 @@ const OpsDashboard: React.FC = () => {
     cancelled: number;
   } | null>(null);
 
+  const sortTicketsByDate = (tickets: Ticket[]) =>
+    tickets.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+
   const fetchTickets = async () => {
     try {
       setIsLoading(true);
@@ -55,7 +62,8 @@ const OpsDashboard: React.FC = () => {
           );
         });
 
-        setTickets(safeTickets);
+      setTickets(sortTicketsByDate(safeTickets));
+
 
         // Set API metadata for stats
         if (metadata) {
@@ -99,7 +107,8 @@ const OpsDashboard: React.FC = () => {
             typeof t.client_message === "string"
           );
         });
-        setTickets(safeTickets);
+       setTickets(sortTicketsByDate(safeTickets));
+
       }
     } catch (error) {
       console.error("Failed to search tickets:", error);
@@ -214,7 +223,8 @@ const OpsDashboard: React.FC = () => {
           );
         });
 
-        setTickets(safeTickets);
+       setTickets(sortTicketsByDate(safeTickets));
+
       }
     } catch (error) {
       console.error("Failed to filter tickets:", error);
