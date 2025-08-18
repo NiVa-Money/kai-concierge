@@ -5,6 +5,7 @@ import {
   endSession,
   getPersonaRecommendations,
   getSessionDetails,
+  voiceChat,
 } from "../../api";
 import { Send, Crown, Mic, Play, Pause, Square } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -62,6 +63,18 @@ const formatSeconds = (seconds: number): string => {
     .padStart(2, "0");
   return `${mins}:${secs}`;
 };
+
+const blobToBase64 = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onloadend = () => {
+      const res = reader.result as string;
+      const commaIdx = res.indexOf(",");
+      resolve(commaIdx >= 0 ? res.slice(commaIdx + 1) : res);
+    };
+    reader.readAsDataURL(blob);
+  });
 
 interface VoiceNotePlayerProps {
   src: string;
@@ -339,7 +352,20 @@ const ChatTab: React.FC = () => {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+
+      // Prefer formats supported by backend (ogg). Fallback to webm if needed.
+      const preferredMimeTypes = [
+        "audio/ogg;codecs=opus",
+        "audio/ogg",
+        "audio/webm;codecs=opus",
+        "audio/webm",
+      ];
+      const selectedMimeType = preferredMimeTypes.find((mt) =>
+        (window as any).MediaRecorder?.isTypeSupported?.(mt)
+      );
+      const recorder = selectedMimeType
+        ? new MediaRecorder(stream, { mimeType: selectedMimeType })
+        : new MediaRecorder(stream);
       setMediaRecorder(recorder);
       const chunks: Blob[] = [];
 
@@ -356,7 +382,8 @@ const ChatTab: React.FC = () => {
 
       recorder.onstop = async () => {
         setIsListening(false);
-        const audioBlob = new Blob(chunks, { type: "audio/webm" });
+        const mimeType = (recorder as any).mimeType || "audio/webm";
+        const audioBlob = new Blob(chunks, { type: mimeType });
         const audioUrl = URL.createObjectURL(audioBlob);
         const audioDuration = await getAudioDurationSeconds(audioBlob);
 
@@ -373,6 +400,66 @@ const ChatTab: React.FC = () => {
         };
 
         setMessages((prev) => [...prev, userMsg]);
+
+        // Send audio to Voice Chat endpoint
+        try {
+          setIsTyping(true);
+          // Ensure we have a session id
+          let currentSessionId = sessionId;
+          if (!currentSessionId && userId) {
+            try {
+              const bootstrap = await createOrUpdateSession({
+                userId,
+                sessionId: undefined,
+                question: "",
+                persona: JSON.stringify(aiPersona),
+              });
+              currentSessionId = bootstrap?.data?.sessionId || null;
+              if (currentSessionId) {
+                setSessionId(currentSessionId);
+                localStorage.setItem("currentSessionId", currentSessionId);
+              }
+            } catch (e) {
+              console.error("Failed to bootstrap session for voice chat", e);
+            }
+          }
+
+          const base64Audio = await blobToBase64(audioBlob);
+          const audioFormat = mimeType.includes("ogg")
+            ? "ogg"
+            : mimeType.includes("webm")
+            ? "webm"
+            : "wav"; // fallback label
+
+          if (currentSessionId) {
+            const vcRes = await voiceChat({
+              audio_data: base64Audio,
+              audio_format: audioFormat,
+              language: "en",
+              session_id: currentSessionId,
+              user_id: userId || undefined,
+            });
+
+            const agentAudioFormat = vcRes.data.audio_format || "mp3";
+            const agentAudioBase64 = vcRes.data.agent_audio;
+            const agentAudioUrl = agentAudioBase64
+              ? `data:audio/${agentAudioFormat};base64,${agentAudioBase64}`
+              : undefined;
+
+            const agentMsg = {
+              id: Date.now().toString() + "-agent",
+              sender: "agent",
+              content: vcRes.data.agent_response || "",
+              audio: agentAudioUrl,
+              timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, agentMsg]);
+          }
+        } catch (error) {
+          console.error("Voice chat error:", error);
+        } finally {
+          setIsTyping(false);
+        }
 
         // Clean up media stream and recorder instance
         try {

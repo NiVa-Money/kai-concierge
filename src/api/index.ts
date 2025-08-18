@@ -557,3 +557,72 @@ export const getAllUsers = () =>
       users: any[];
     };
   }>("/api/v1/users");
+
+// =======================
+// Voice APIs
+// =======================
+
+export interface VoiceSTTPayload {
+  audio_data: string; // base64 (no data URI prefix)
+  audio_format: string; // e.g., wav, mp3, m4a, flac, ogg
+  language?: string;
+  session_id?: string;
+}
+
+export interface VoiceSTTResponse {
+  success: boolean;
+  text: string;
+  confidence?: number;
+  language?: string;
+  session_id?: string;
+}
+
+export interface VoiceTTSPayload {
+  text: string;
+  voice?: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" | string;
+  model?: string; // default tts-1
+  speed?: number;
+  session_id?: string;
+}
+
+export interface VoiceTTSResponse {
+  success: boolean;
+  audio_data: string; // base64
+  audio_format: string; // e.g., mp3
+  duration?: number;
+  session_id?: string;
+}
+
+export interface VoiceChatPayload {
+  audio_data: string; // base64
+  audio_format: string; // e.g., wav
+  language?: string;
+  session_id: string;
+  user_id?: string;
+}
+
+export interface VoiceChatResponse {
+  success: boolean;
+  user_text: string;
+  agent_response: string;
+  agent_audio?: string; // base64
+  audio_format?: string; // e.g., mp3
+  session_id?: string;
+  confidence?: number;
+}
+
+export const voiceSTT = (data: VoiceSTTPayload) =>
+  api.post<VoiceSTTResponse>("/api/v1/voice/stt", data);
+
+export const voiceTTS = (data: VoiceTTSPayload) =>
+  api.post<VoiceTTSResponse>("/api/v1/voice/tts", data);
+
+export const voiceChat = (data: VoiceChatPayload) =>
+  api.post<VoiceChatResponse>("/api/v1/voice/chat", data);
+
+export const getVoiceSupportedFormats = () =>
+  api.get<{ formats: string[]; voices: string[]; languages: string[] }>(
+    "/api/v1/voice/supported-formats"
+  );
+
+export const getVoiceHealth = () => api.get("/api/v1/voice/health");
