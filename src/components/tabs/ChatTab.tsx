@@ -6,11 +6,177 @@ import {
   getPersonaRecommendations,
   getSessionDetails,
 } from "../../api";
-import { Send, Crown, Mic } from "lucide-react";
+import { Send, Crown, Mic, Play, Pause } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatMessage } from "../../utils/messageFormatter";
 
 // const recognitionInstance: any = null;
+
+// Attempts to get an accurate audio duration. Falls back to HTMLAudio if
+// the Web Audio API cannot decode the blob. Returns null if not finite.
+const getAudioDurationSeconds = async (blob: Blob): Promise<number | null> => {
+  try {
+    const AudioCtx =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (AudioCtx) {
+      const ctx = new AudioCtx();
+      const arrayBuffer = await blob.arrayBuffer();
+      const audioBuffer: AudioBuffer = await new Promise((resolve, reject) => {
+        ctx.decodeAudioData(arrayBuffer.slice(0), resolve, reject);
+      });
+      const duration = audioBuffer.duration;
+      ctx.close?.();
+      return Number.isFinite(duration) ? duration : null;
+    }
+  } catch {
+    // Fall through to HTMLAudio fallback
+  }
+
+  return await new Promise<number | null>((resolve) => {
+    const objectUrl = URL.createObjectURL(blob);
+    const tempAudio = new Audio(objectUrl);
+    const cleanup = () => URL.revokeObjectURL(objectUrl);
+    tempAudio.addEventListener(
+      "loadedmetadata",
+      () => {
+        const duration = tempAudio.duration;
+        cleanup();
+        resolve(Number.isFinite(duration) ? duration : null);
+      },
+      { once: true }
+    );
+    // In case metadata never fires, resolve after a timeout
+    setTimeout(() => {
+      cleanup();
+      resolve(null);
+    }, 4000);
+  });
+};
+
+const formatSeconds = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const secs = Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, "0");
+  return `${mins}:${secs}`;
+};
+
+interface VoiceNotePlayerProps {
+  src: string;
+  durationSeconds?: number | null;
+}
+
+const VoiceNotePlayer: React.FC<VoiceNotePlayerProps> = ({ src, durationSeconds }) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState<number>(
+    Number.isFinite(durationSeconds || 0) && (durationSeconds || 0) > 0
+      ? (durationSeconds as number)
+      : 0
+  );
+
+  useEffect(() => {
+    const audio = new Audio(src);
+    audioRef.current = audio;
+
+    const handleLoaded = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration);
+      }
+    };
+    const handleTime = () => setCurrentTime(audio.currentTime || 0);
+    const handleEnded = () => setIsPlaying(false);
+
+    audio.addEventListener("loadedmetadata", handleLoaded);
+    audio.addEventListener("timeupdate", handleTime);
+    audio.addEventListener("ended", handleEnded);
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener("loadedmetadata", handleLoaded);
+      audio.removeEventListener("timeupdate", handleTime);
+      audio.removeEventListener("ended", handleEnded);
+      audioRef.current = null;
+    };
+  }, [src]);
+
+  // If duration was not provided or is invalid, attempt to decode from the blob URL
+  useEffect(() => {
+    if (duration > 0) return;
+    let isCancelled = false;
+    const detect = async () => {
+      try {
+        const res = await fetch(src);
+        const blob = await res.blob();
+        const d = await getAudioDurationSeconds(blob);
+        if (!isCancelled && d && Number.isFinite(d) && d > 0) {
+          setDuration(d);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    void detect();
+    return () => {
+      isCancelled = true;
+    };
+  }, [src, duration]);
+
+  const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      audio.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const audio = audioRef.current;
+    if (!audio || !duration) return;
+    const value = Number(e.target.value);
+    audio.currentTime = (value / 100) * duration;
+  };
+
+  const hasFiniteDuration = Number.isFinite(duration) && duration > 0;
+  const progressPercent = hasFiniteDuration
+    ? Math.min(100, (currentTime / duration) * 100)
+    : 0;
+
+  return (
+    <div className="flex items-center space-x-3 bg-slate-900/40 border border-slate-700 rounded-md px-3 py-2">
+      <button
+        type="button"
+        onClick={togglePlay}
+        className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 text-white"
+        aria-label={isPlaying ? "Pause" : "Play"}
+      >
+        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+      </button>
+
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={progressPercent}
+        onChange={handleSeek}
+        className="flex-1 accent-amber-400"
+        disabled={!hasFiniteDuration}
+        aria-label="Seek"
+      />
+
+      <div className="text-xs text-slate-300 w-14 text-right tabular-nums">
+        {formatSeconds(currentTime)} / {hasFiniteDuration ? formatSeconds(duration) : "--:--"}
+      </div>
+    </div>
+  );
+};
 
 const ChatTab: React.FC = () => {
   const [input, setInput] = useState("");
@@ -22,7 +188,6 @@ const ChatTab: React.FC = () => {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
     null
   );
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
   const userId = localStorage.getItem("userId");
   const aiPersona = JSON.parse(localStorage.getItem("aiPersona") || "{}");
@@ -176,7 +341,7 @@ const ChatTab: React.FC = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
       setMediaRecorder(recorder);
-      setAudioChunks([]);
+      const chunks: Blob[] = [];
 
       recorder.onstart = () => {
         setIsListening(true);
@@ -184,30 +349,38 @@ const ChatTab: React.FC = () => {
       };
 
       recorder.ondataavailable = (e) => {
-        setAudioChunks((prev) => [...prev, e.data]);
+        if (e.data && e.data.size > 0) {
+          chunks.push(e.data);
+        }
       };
 
       recorder.onstop = async () => {
         setIsListening(false);
-        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        const audioBlob = new Blob(chunks, { type: "audio/webm" });
         const audioUrl = URL.createObjectURL(audioBlob);
-
-        const audioDuration = await new Promise<number>((resolve) => {
-          const tempAudio = new Audio(audioUrl);
-          tempAudio.addEventListener("loadedmetadata", () => {
-            resolve(tempAudio.duration);
-          });
-        });
+        const audioDuration = await getAudioDurationSeconds(audioBlob);
 
         const userMsg = {
           id: Date.now().toString(),
           sender: "user",
-          content: `Voice note (${Math.round(audioDuration)}s)`,
+          content:
+            audioDuration !== null
+              ? `Voice note (${Math.round(audioDuration)}s)`
+              : `Voice note`,
           audio: audioUrl,
+          duration: audioDuration ?? undefined,
           timestamp: new Date(),
         };
 
         setMessages((prev) => [...prev, userMsg]);
+
+        // Clean up media stream and recorder instance
+        try {
+          stream.getTracks().forEach((track) => track.stop());
+        } catch {
+          console.error("Error stopping media stream");
+        }
+        setMediaRecorder(null);
       };
 
       recorder.start();
@@ -421,14 +594,7 @@ const ChatTab: React.FC = () => {
                     >
                       {msg.audio ? (
                         <div className="space-y-1">
-                          <audio
-                            controls
-                            src={msg.audio}
-                            className="w-full max-w-xs rounded-md"
-                          />
-                          <p className="text-xs text-slate-400 italic">
-                            {msg.content}
-                          </p>
+                          <VoiceNotePlayer src={msg.audio} durationSeconds={(msg as any).duration} />
                         </div>
                       ) : (
                         formatMessage(msg.content)
