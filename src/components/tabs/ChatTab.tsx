@@ -7,7 +7,7 @@ import {
   getSessionDetails,
   voiceChat,
 } from "../../api";
-import { Send, Crown, Mic, Play, Pause, Square } from "lucide-react";
+import { Send, Crown, Mic, Play, Pause, Square, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatMessage } from "../../utils/messageFormatter";
 
@@ -196,6 +196,7 @@ const ChatTab: React.FC = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
@@ -403,7 +404,7 @@ const ChatTab: React.FC = () => {
 
         // Send audio to Voice Chat endpoint
         try {
-          setIsTyping(true);
+          setIsProcessingVoice(true);
           // Ensure we have a session id
           let currentSessionId = sessionId;
           if (!currentSessionId && userId) {
@@ -458,7 +459,7 @@ const ChatTab: React.FC = () => {
         } catch (error) {
           console.error("Voice chat error:", error);
         } finally {
-          setIsTyping(false);
+          setIsProcessingVoice(false);
         }
 
         // Clean up media stream and recorder instance
@@ -689,6 +690,39 @@ const ChatTab: React.FC = () => {
                     </div>
                   </motion.div>
                 ))}
+
+                {/* Agent Processing Indicator */}
+                {(isTyping || isProcessingVoice) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex justify-start"
+                  >
+                    <div className="max-w-2xl p-4 rounded-xl bg-slate-800/50 text-white border border-slate-700">
+                      <div className="flex items-center space-x-3">
+                        <div className="relative">
+                          <div className="w-8 h-8 bg-amber-400/20 rounded-full flex items-center justify-center">
+                            <Crown className="w-4 h-4 text-amber-400" />
+                          </div>
+                          <div className="absolute -top-1 -right-1">
+                            <Loader2 className="w-3 h-3 text-amber-400 animate-spin" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-amber-400">
+                            kai° Concierge
+                          </div>
+                          <div className="text-xs text-slate-400">
+                            {isProcessingVoice 
+                              ? "Processing your voice message..." 
+                              : "Crafting your personalized response..."
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </div>
             )}
           </AnimatePresence>
