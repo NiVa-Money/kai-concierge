@@ -6,7 +6,7 @@ import {
   getPersonaRecommendations,
   getSessionDetails,
 } from "../../api";
-import { Send, Crown, Mic, Play, Pause } from "lucide-react";
+import { Send, Crown, Mic, Play, Pause, Square } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatMessage } from "../../utils/messageFormatter";
 
@@ -193,17 +193,17 @@ const ChatTab: React.FC = () => {
   const aiPersona = JSON.parse(localStorage.getItem("aiPersona") || "{}");
   const [isListening, setIsListening] = useState(false);
 
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/@elevenlabs/convai-widget-embed";
-    script.async = true;
-    script.type = "text/javascript";
-    document.body.appendChild(script);
+  // useEffect(() => {
+  //   // const script = document.createElement("script");
+  //   // script.src = "https://unpkg.com/@elevenlabs/convai-widget-embed";
+  //   // script.async = true;
+  //   // script.type = "text/javascript";
+  //   // document.body.appendChild(script);
 
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
+  //   return () => {
+  //     // document.body.removeChild(script);
+  //   };
+  // }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -642,17 +642,21 @@ const ChatTab: React.FC = () => {
                     className={`p-2 rounded-lg transition-colors ${
                       isListening ? "bg-amber-400/20" : "hover:bg-slate-700/50"
                     }`}
+                    aria-pressed={isListening}
+                    aria-label={
+                      isListening ? "Stop recording" : "Start voice recording"
+                    }
                   >
-                    <Mic
-                      className={`w-6 h-6 ${
-                        isListening ? "text-amber-400" : "text-slate-400"
-                      }`}
-                    />
+                    {isListening ? (
+                      <Square className="w-6 h-6 text-amber-400" />
+                    ) : (
+                      <Mic className="w-6 h-6 text-slate-400" />
+                    )}
                   </button>
 
                   {isListening && (
-                    <div className="absolute -top-9 left-1/2 -translate-x-1/2 px-2 py-1 text-xs text-white bg-slate-800 border border-slate-600 rounded shadow-md">
-                      Listening...
+                    <div className="absolute right-full top-1/2 -translate-y-1/2 mr-4 px-2 py-1 text-xs text-white bg-slate-800 border border-slate-600 rounded shadow-md pointer-events-none whitespace-nowrap z-10">
+                      Recording… click to stop
                     </div>
                   )}
                 </div>
@@ -667,16 +671,7 @@ const ChatTab: React.FC = () => {
               </div>
             </div>
           </form>
-
-          {/* ElevenLabs Widget */}
-          {/* <div className="mt-3">
-            <elevenlabs-convai agent-id="agent_01k0peh8sbfg0vmp2zmt3emk36"></elevenlabs-convai>
-            <script
-              src="https://unpkg.com/@elevenlabs/convai-widget-embed"
-              async
-              type="text/javascript"
-            ></script>
-          </div> */}
+          
         </div>
       </div>
     </div>
