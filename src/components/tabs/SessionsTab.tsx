@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// /* eslint-disable @typescript-eslint/no-unused-vars */
 // /* eslint-disable @typescript-eslint/no-explicit-any */
 // import React, { useEffect, useState, useRef } from "react";
 // import {
@@ -21,21 +19,20 @@
 //   History,
 //   Search,
 //   Square,
+//   ArrowLeft,
 // } from "lucide-react";
 // import { motion, AnimatePresence } from "framer-motion";
 // import { formatMessage } from "../../utils/messageFormatter";
 
 // const SessionsTab: React.FC = () => {
 //   const [sessions, setSessions] = useState<SessionResponse[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState<string | null>(null);
 //   const [selectedSession, setSelectedSession] =
 //     useState<SessionResponse | null>(null);
 //   const [sessionDetails, setSessionDetails] = useState<any>(null);
 //   const [loadingDetails, setLoadingDetails] = useState(false);
 //   const [input, setInput] = useState("");
 //   const [isTyping, setIsTyping] = useState(false);
-//   const [showHistory, setShowHistory] = useState(false);
+//   const [showHistory, setShowHistory] = useState(true);
 //   const [searchQuery, setSearchQuery] = useState("");
 //   const [showEndSessionConfirm, setShowEndSessionConfirm] = useState(false);
 
@@ -66,6 +63,7 @@
 //     window.addEventListener("resize", handleResize);
 //     return () => window.removeEventListener("resize", handleResize);
 //   }, []);
+
 //   const messagesEndRef = useRef<HTMLDivElement>(null);
 //   const { user } = useAuth();
 //   const { setCurrentSession, loadSessionMessages } = useChat();
@@ -86,7 +84,6 @@
 //       if (!user?.user_id) return;
 
 //       try {
-//         setLoading(true);
 //         const response = await getUserSessions(user.user_id);
 //         const mappedSessions = (
 //           response.data.data.sessions as SessionResponse[]
@@ -97,18 +94,14 @@
 //             user_id: s.userId!,
 //             question:
 //               s.chats && s.chats.length > 0
-//                 ? s.chats[0].question
+//                 ? s.chats[0].question || "No question"
 //                 : "No question",
 //             status: s.isSessionEnd ? ("ended" as const) : ("active" as const),
 //             created_at: s.sessionStartAt!,
 //           })) as SessionResponse[];
 //         setSessions(mappedSessions);
-//         setError(null);
 //       } catch (err) {
 //         console.error("Error fetching sessions:", err);
-//         setError("Failed to load sessions. Please try again.");
-//       } finally {
-//         setLoading(false);
 //       }
 //     };
 
@@ -128,7 +121,6 @@
 //         sessions.find((s) => s.session_id === sessionId) || null
 //       );
 
-//       // Convert chats to messages for the chat context
 //       const messages = (sessionData.chats ?? []).flatMap((chat: any) => [
 //         {
 //           id: chat.id,
@@ -158,9 +150,9 @@
 
 //       loadSessionMessages(messages);
 //       setShowHistory(false);
+//       if (!isDesktop) setSidebarOpen(false); // Close sidebar on mobile after selection
 //     } catch (err) {
 //       console.error("Error loading session details:", err);
-//       setError("Failed to load session details. Please try again.");
 //     } finally {
 //       setLoadingDetails(false);
 //     }
@@ -177,7 +169,6 @@
 //       timestamp: new Date(),
 //     };
 
-//     // Add user message to session details
 //     if (sessionDetails) {
 //       setSessionDetails((prev: any) => ({
 //         ...prev,
@@ -207,7 +198,6 @@
 //       const agentResponse =
 //         res?.data?.agentResponse || "I've processed your request.";
 
-//       // Add AI response to session details
 //       if (sessionDetails) {
 //         setSessionDetails((prev: any) => ({
 //           ...prev,
@@ -226,29 +216,69 @@
 //     }
 //   };
 
-// const handleEndSession = async () => {
-//   if (!selectedSession?.session_id || !userId) return;
+//   const handleEndSession = async () => {
+//     if (!selectedSession?.session_id || !userId) return;
 
-//   try {
-//     await endSession(selectedSession.session_id, {
-//       userId,
-//       reason: "User manually ended session",
-//     });
+//     try {
+//       await endSession(selectedSession.session_id, {
+//         userId,
+//         reason: "User manually ended session",
+//       });
 
-//     // Update session details to reflect ended status
-//     setSessionDetails((prev: any) => ({
-//       ...prev,
-//       isSessionEnd: true,
-//       status: "ended",
-//     }));
-//   } catch (err) {
-//     console.error("Error ending session:", err);
-//     setError("Failed to end session. Please try again.");
-//   }
-// };
+//       setSessionDetails((prev: any) => ({
+//         ...prev,
+//         isSessionEnd: true,
+//         status: "ended",
+//       }));
+//       setShowEndSessionConfirm(false);
+//     } catch (err) {
+//       console.error("Error ending session:", err);
+//     }
+//   };
 
-//   // --- Utility and derived values ---
+//   // --- Mobile History Rendering ---
+//   const renderMobileHistory = () => (
+//     <div className="p-4 space-y-4">
+//       <div className="relative">
+//         <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+//         <input
+//           className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400"
+//           placeholder="Search sessions..."
+//           value={searchQuery}
+//           onChange={(e) => setSearchQuery(e.target.value)}
+//         />
+//       </div>
+//       {filteredSessions.map((session) => (
+//         <button
+//           key={session.session_id}
+//           onClick={() => handleSessionClick(session.session_id || "")}
+//           className="w-full text-left p-4 bg-slate-700 rounded-xl border border-slate-600 text-white"
+//         >
+//           <div className="flex justify-between">
+//             <span className="font-medium text-sm truncate">
+//               {session.question && session.question.length > 50
+//                 ? session.question.slice(0, 50) + "..."
+//                 : session.question || "No question"}
+//             </span>
+//             <span
+//               className={`text-xs ${
+//                 session.status === "active"
+//                   ? "text-green-400"
+//                   : "text-slate-400"
+//               }`}
+//             >
+//               {session.status}
+//             </span>
+//           </div>
+//           <div className="text-xs text-slate-400 mt-1">
+//             {formatDate(session.created_at || "")}
+//           </div>
+//         </button>
+//       ))}
+//     </div>
+//   );
 
+//   // --- Sidebar Rendering ---
 //   function renderSidebar() {
 //     if (!(sidebarOpen || isDesktop)) return null;
 //     return (
@@ -315,7 +345,6 @@
 //                     onClick={() => {
 //                       if (session.session_id)
 //                         handleSessionClick(session.session_id);
-//                       // On mobile, close sidebar after selecting
 //                       if (window.innerWidth < 768) setSidebarOpen(false);
 //                     }}
 //                     className={`w-full text-left p-3 rounded-lg hover:bg-slate-700/50 transition-colors ${
@@ -328,7 +357,7 @@
 //                       <h4 className="font-medium text-white truncate flex-1 text-sm">
 //                         {session.question && session.question.length > 40
 //                           ? session.question.substring(0, 40) + "..."
-//                           : session.question ?? ""}
+//                           : session.question || "No question"}
 //                       </h4>
 //                       <span
 //                         className={`text-xs px-2 py-1 rounded-full ml-2 ${
@@ -356,35 +385,26 @@
 
 //   return (
 //     <div className="h-full flex bg-slate-900 relative">
-//       {/* Mobile: Hamburger menu */}
-//       <button
-//         className="md:hidden fixed top-4 left-4 z-40 bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-white focus:outline-none"
-//         onClick={() => setSidebarOpen(true)}
-//         aria-label="Open session history"
-//         style={{ display: sidebarOpen ? "none" : undefined }}
-//       >
-//         <svg
-//           width="24"
-//           height="24"
-//           fill="none"
-//           stroke="currentColor"
-//           strokeWidth="2"
-//           strokeLinecap="round"
-//           strokeLinejoin="round"
-//           className="lucide lucide-menu"
-//         >
-//           <line x1="4" y1="12" x2="20" y2="12" />
-//           <line x1="4" y1="6" x2="20" y2="6" />
-//           <line x1="4" y1="18" x2="20" y2="18" />
-//         </svg>
-//       </button>
-
-//       {renderSidebar()}
+//       {isDesktop
+//         ? renderSidebar()
+//         : !selectedSession
+//         ? renderMobileHistory()
+//         : renderSidebar()}
 
 //       {/* Main Chat Area - Grok Style */}
 //       <div className="flex-1 flex flex-col min-w-0">
 //         {selectedSession && sessionDetails ? (
 //           <>
+//             {/* Mobile: Back Button */}
+//             {!isDesktop && (
+//               <button
+//                 onClick={() => setSelectedSession(null)}
+//                 className="text-amber-400 flex items-center space-x-2 text-sm px-4 pt-4"
+//               >
+//                 <ArrowLeft className="w-4 h-4" />
+//                 <span>Back to sessions</span>
+//               </button>
+//             )}
 //             {/* Session Info Header - Pinned at top */}
 //             <div className="bg-slate-800/30 border-b border-slate-700 p-4 flex-shrink-0 sticky top-0 z-10">
 //               <div className="max-w-4xl mx-auto">
@@ -553,7 +573,6 @@
 //                         placeholder="Continue the conversation..."
 //                         className="flex-1 bg-transparent text-white placeholder-slate-400 focus:outline-none"
 //                       />
-
 //                       <button
 //                         type="submit"
 //                         disabled={!input.trim()}
@@ -640,7 +659,8 @@
 
 // export default SessionsTab;
 
-import React, { useEffect, useState, useRef } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useState } from "react";
 import {
   getUserSessions,
   getSessionDetails,
@@ -664,6 +684,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatMessage } from "../../utils/messageFormatter";
+import useSmartAutoscroll from "../../contexts/hooks/useSmartAutoscroll";
 
 const SessionsTab: React.FC = () => {
   const [sessions, setSessions] = useState<SessionResponse[]>([]);
@@ -705,20 +726,28 @@ const SessionsTab: React.FC = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { setCurrentSession, loadSessionMessages } = useChat();
 
   const userId = localStorage.getItem("userId");
   const aiPersona = JSON.parse(localStorage.getItem("aiPersona") || "{}");
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [sessionDetails]);
+  // ---- SMART AUTOSCROLL HOOK ----
+  const messageCount = sessionDetails?.chats?.length ?? 0;
+  const {
+    containerRef,
+    endRef,
+    isAtBottom,
+    hasNewItems,
+    jumpToBottom,
+    autoScroll,
+    setHasNewItems,
+  } = useSmartAutoscroll({
+    observe: [messageCount, isTyping],
+    resetKey: selectedSession?.session_id,
+    tolerance: 64,
+    firstLoadBehavior: "auto",
+  });
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -752,9 +781,8 @@ const SessionsTab: React.FC = () => {
   const handleSessionClick = async (sessionId: string) => {
     try {
       setLoadingDetails(true);
-      const userId = user?.user_id || localStorage.getItem("userId");
-      console.log("Fetching session details with userId:", userId);
-      const response = await getSessionDetails(sessionId, userId || undefined);
+      const uid = user?.user_id || localStorage.getItem("userId");
+      const response = await getSessionDetails(sessionId, uid || undefined);
       const sessionData = response.data.data;
 
       setSessionDetails(sessionData);
@@ -791,7 +819,8 @@ const SessionsTab: React.FC = () => {
 
       loadSessionMessages(messages);
       setShowHistory(false);
-      if (!isDesktop) setSidebarOpen(false); // Close sidebar on mobile after selection
+      if (!isDesktop) setSidebarOpen(false);
+      // Hook will auto-jump on first load due to resetKey
     } catch (err) {
       console.error("Error loading session details:", err);
     } finally {
@@ -851,6 +880,7 @@ const SessionsTab: React.FC = () => {
       }
 
       setIsTyping(false);
+      if (autoScroll) jumpToBottom("smooth");
     } catch (err) {
       console.error("Error sending message:", err);
       setIsTyping(false);
@@ -1094,13 +1124,30 @@ const SessionsTab: React.FC = () => {
 
             {/* Chat Messages */}
             <div
-              className="flex-1 overflow-y-auto p-6 custom-scrollbar min-h-0"
+              ref={containerRef} // smart autoscroll container
+              className="relative flex-1 overflow-y-auto p-6 custom-scrollbar min-h-0"
               style={{
                 maxHeight: sessionDetails.isSessionEnd
                   ? "calc(100vh - 120px)"
                   : "calc(100vh - 200px)",
               }}
             >
+              {/* "Jump to latest" pill */}
+              {hasNewItems && !isAtBottom && (
+                <button
+                  onClick={() => {
+                    jumpToBottom("smooth");
+                    setHasNewItems(false);
+                  }}
+                  className="absolute bottom-6 left-1/2 -translate-x-1/2 md:right-8 md:left-auto
+                             z-10 px-3 py-1.5 rounded-full bg-amber-400 text-slate-900
+                             text-sm font-medium shadow border border-amber-500/50"
+                  aria-label="Jump to latest messages"
+                >
+                  New messages — Jump to latest
+                </button>
+              )}
+
               <AnimatePresence>
                 {loadingDetails ? (
                   <div className="flex items-center justify-center h-full">
@@ -1182,7 +1229,8 @@ const SessionsTab: React.FC = () => {
                         </div>
                       </motion.div>
                     )}
-                    <div ref={messagesEndRef} />
+                    {/* Anchor for autoscroll */}
+                    <div ref={endRef} />
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full p-4 text-center">

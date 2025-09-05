@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   createOrUpdateSession,
   endSession,
-  getPersonaRecommendations,
+  // getPersonaRecommendations,
   getSessionDetails,
   voiceChat,
 } from "../../api";
@@ -81,7 +81,10 @@ interface VoiceNotePlayerProps {
   durationSeconds?: number | null;
 }
 
-const VoiceNotePlayer: React.FC<VoiceNotePlayerProps> = ({ src, durationSeconds }) => {
+const VoiceNotePlayer: React.FC<VoiceNotePlayerProps> = ({
+  src,
+  durationSeconds,
+}) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -170,7 +173,11 @@ const VoiceNotePlayer: React.FC<VoiceNotePlayerProps> = ({ src, durationSeconds 
         className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 text-white"
         aria-label={isPlaying ? "Pause" : "Play"}
       >
-        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+        {isPlaying ? (
+          <Pause className="w-4 h-4" />
+        ) : (
+          <Play className="w-4 h-4" />
+        )}
       </button>
 
       <input
@@ -185,7 +192,8 @@ const VoiceNotePlayer: React.FC<VoiceNotePlayerProps> = ({ src, durationSeconds 
       />
 
       <div className="text-xs text-slate-300 w-14 text-right tabular-nums">
-        {formatSeconds(currentTime)} / {hasFiniteDuration ? formatSeconds(duration) : "--:--"}
+        {formatSeconds(currentTime)} /{" "}
+        {hasFiniteDuration ? formatSeconds(duration) : "--:--"}
       </div>
     </div>
   );
@@ -198,7 +206,7 @@ const ChatTab: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [recommendations, setRecommendations] = useState<any[]>([]);
+  // const [recommendations, setRecommendations] = useState<any[]>([]);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
     null
   );
@@ -256,25 +264,25 @@ const ChatTab: React.FC = () => {
     loadExistingSession();
   }, [userId]);
 
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-      if (!userId || messages.length > 0) return;
+  // useEffect(() => {
+  //   const fetchRecommendations = async () => {
+  //     if (!userId || messages.length > 0) return;
 
-      setIsTyping(true);
+  //     setIsTyping(true);
 
-      try {
-        const res = await getPersonaRecommendations(userId);
-        const recos = res.data?.data?.recommendations || [];
-        setRecommendations(recos);
-      } catch (err) {
-        console.error("Failed to get recommendations", err);
-      } finally {
-        setIsTyping(false); // stop loader
-      }
-    };
+  //     try {
+  //       const res = await getPersonaRecommendations(userId);
+  //       const recos = res.data?.data?.recommendations || [];
+  //       setRecommendations(recos);
+  //     } catch (err) {
+  //       console.error("Failed to get recommendations", err);
+  //     } finally {
+  //       setIsTyping(false); // stop loader
+  //     }
+  //   };
 
-    fetchRecommendations();
-  }, [userId, messages.length]);
+  //   fetchRecommendations();
+  // }, [userId, messages.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -533,56 +541,56 @@ const ChatTab: React.FC = () => {
   //   recognition.start();
   // };
 
-  const handleCardClick = async (recommendation: any) => {
-    if (!userId) return;
+  // const handleCardClick = async (recommendation: any) => {
+  //   if (!userId) return;
 
-    const userMsg = {
-      id: Date.now().toString(),
-      sender: "user",
-      content: recommendation.title,
-      timestamp: new Date(),
-    };
+  //   const userMsg = {
+  //     id: Date.now().toString(),
+  //     sender: "user",
+  //     content: recommendation.title,
+  //     timestamp: new Date(),
+  //   };
 
-    setMessages([userMsg]);
-    setIsTyping(true);
+  //   setMessages([userMsg]);
+  //   setIsTyping(true);
 
-    try {
-      const res = await createOrUpdateSession({
-        userId,
-        sessionId: undefined, // Start new session
-        question: recommendation.title,
-        persona: JSON.stringify(aiPersona),
-      });
+  //   try {
+  //     const res = await createOrUpdateSession({
+  //       userId,
+  //       sessionId: undefined, // Start new session
+  //       question: recommendation.title,
+  //       persona: JSON.stringify(aiPersona),
+  //     });
 
-      const agentResponse =
-        res?.data?.agentResponse || "I've processed your request.";
+  //     const agentResponse =
+  //       res?.data?.agentResponse || "I've processed your request.";
 
-      const agentMsg = {
-        id: Date.now().toString() + "-agent",
-        sender: "agent",
-        content: agentResponse,
-        timestamp: new Date(),
-      };
+  //     const agentMsg = {
+  //       id: Date.now().toString() + "-agent",
+  //       sender: "agent",
+  //       content: agentResponse,
+  //       timestamp: new Date(),
+  //     };
 
-      setMessages([userMsg, agentMsg]);
-      if (res?.data?.sessionId) {
-        setSessionId(res.data.sessionId);
-        localStorage.setItem("currentSessionId", res.data.sessionId);
-      }
-      setIsTyping(false);
+  //     setMessages([userMsg, agentMsg]);
+  //     if (res?.data?.sessionId) {
+  //       setSessionId(res.data.sessionId);
+  //       localStorage.setItem("currentSessionId", res.data.sessionId);
+  //     }
+  //     setIsTyping(false);
 
-      if (res?.data?.status === "ended") {
-        console.log("Session ended. Ticket ID:", res.data.ticketId);
-      }
-    } catch (error: any) {
-      console.error(
-        "API error:",
-        error,
-        error?.response?.data || error.message
-      );
-      setIsTyping(false);
-    }
-  };
+  //     if (res?.data?.status === "ended") {
+  //       console.log("Session ended. Ticket ID:", res.data.ticketId);
+  //     }
+  //   } catch (error: any) {
+  //     console.error(
+  //       "API error:",
+  //       error,
+  //       error?.response?.data || error.message
+  //     );
+  //     setIsTyping(false);
+  //   }
+  // };
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -621,46 +629,54 @@ const ChatTab: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Cards */}
-                {isTyping ? (
-                  <div className="mt-6 text-slate-300 text-sm">
-                    Generating recommendations for you...
-                  </div>
-                ) : (
-                  recommendations.length > 0 && (
-                    <div className="w-full max-w-4xl px-4 grid grid-cols-2 gap-3">
-                      {recommendations.slice(0, 4).map((r, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          whileHover={{
-                            scale: 1.02,
-                            y: -2,
-                            transition: { duration: 0.2, ease: "easeOut" },
-                          }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => handleCardClick(r)}
-                          className="bg-slate-800/60 border border-slate-700/50 rounded-lg p-3 shadow-sm hover:shadow-amber-500/20 hover:shadow-lg transition-all duration-300 hover:border-amber-400/30 hover:bg-slate-800/80 backdrop-blur-sm group cursor-pointer"
-                        >
-                          <h3 className="text-sm font-medium text-white mb-1 line-clamp-1 group-hover:text-amber-300 transition-colors duration-300">
-                            {r.title}
-                          </h3>
+                {/* Recommendations (disabled) */}
+                {/*
+      {isTyping ? (
+        <div className="mt-6 text-slate-300 text-sm">
+          Generating recommendations for you...
+        </div>
+      ) : (
+        recommendations.length > 0 && (
+          <div className="w-full max-w-4xl px-4 grid grid-cols-2 gap-3">
+            {recommendations.slice(0, 4).map((r, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                whileHover={{
+                  scale: 1.02,
+                  y: -2,
+                  transition: { duration: 0.2, ease: "easeOut" },
+                }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleCardClick(r)}
+                className="bg-slate-800/60 border border-slate-700/50 rounded-lg p-3 shadow-sm hover:shadow-amber-500/20 hover:shadow-lg transition-all duration-300 hover:border-amber-400/30 hover:bg-slate-800/80 backdrop-blur-sm group cursor-pointer"
+              >
+                <h3 className="text-sm font-medium text-white mb-1 line-clamp-1 group-hover:text-amber-300 transition-colors duration-300">
+                  {r.title}
+                </h3>
 
-                          <p className="text-xs text-slate-400 line-clamp-2 mb-2 group-hover:text-slate-300 transition-colors duration-300">
-                            {r.reasoning}
-                          </p>
+                <p className="text-xs text-slate-400 line-clamp-2 mb-2 group-hover:text-slate-300 transition-colors duration-300">
+                  {r.reasoning}
+                </p>
 
-                          <div className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors duration-300">
-                            <span className="font-medium">Cost:</span>{" "}
-                            {r.estimated_cost}
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )
-                )}
+                <div className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors duration-300">
+                  <span className="font-medium">Cost:</span>{" "}
+                  {r.estimated_cost}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )
+      )}
+      */}
+
+                {/* Simple hint instead of recommendations */}
+                <div className="mt-6 text-slate-400 text-sm">
+                  Start by asking anything—travel plans, shopping help, or a
+                  quick task.
+                </div>
               </motion.div>
             ) : (
               <div className="mt-4 space-y-4">
@@ -682,7 +698,10 @@ const ChatTab: React.FC = () => {
                     >
                       {msg.audio ? (
                         <div className="space-y-1">
-                          <VoiceNotePlayer src={msg.audio} durationSeconds={(msg as any).duration} />
+                          <VoiceNotePlayer
+                            src={msg.audio}
+                            durationSeconds={(msg as any).duration}
+                          />
                         </div>
                       ) : (
                         formatMessage(msg.content)
@@ -713,10 +732,9 @@ const ChatTab: React.FC = () => {
                             kai° Concierge
                           </div>
                           <div className="text-xs text-slate-400">
-                            {isProcessingVoice 
-                              ? "Processing your voice message..." 
-                              : "Crafting your personalized response..."
-                            }
+                            {isProcessingVoice
+                              ? "Processing your voice message..."
+                              : "Crafting your personalized response..."}
                           </div>
                         </div>
                       </div>
@@ -792,7 +810,6 @@ const ChatTab: React.FC = () => {
               </div>
             </div>
           </form>
-          
         </div>
       </div>
     </div>
