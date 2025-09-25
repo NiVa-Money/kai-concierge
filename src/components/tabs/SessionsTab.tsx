@@ -12,14 +12,11 @@ import { useChat } from "../../contexts/ChatContext";
 import {
   Clock,
   MessageSquare,
-  Bot,
-  Send,
-  Calendar,
-  User as UserIcon,
   History,
   Search,
   Square,
   ArrowLeft,
+  Mic,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatMessage } from "../../utils/messageFormatter";
@@ -250,9 +247,9 @@ const SessionsTab: React.FC = () => {
   const renderMobileHistory = () => (
     <div className="p-4 space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+        <Search className="absolute left-3 top-2.5 w-4 h-4 text-white" />
         <input
-          className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400"
+          className="w-full pl-10 pr-4 py-2 bg-[#222323] border border-black rounded-lg text-white placeholder-slate-400"
           placeholder="Search sessions..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -262,7 +259,7 @@ const SessionsTab: React.FC = () => {
         <button
           key={session.session_id}
           onClick={() => handleSessionClick(session.session_id || "")}
-          className="w-full text-left p-4 bg-slate-700 rounded-xl border border-slate-600 text-white"
+          className="w-full text-left p-4 bg-black rounded-xl border border-slate-600 text-white"
         >
           <div className="flex justify-between">
             <span className="font-medium text-sm truncate">
@@ -293,7 +290,7 @@ const SessionsTab: React.FC = () => {
     if (!(sidebarOpen || isDesktop)) return null;
     return (
       <div
-        className={`w-80 bg-slate-800/50 border-r border-slate-700 flex flex-col h-full z-30 md:static md:translate-x-0 fixed top-0 left-0 transition-transform duration-300 md:block ${
+        className={`w-80 bg-[#191919] border border-slate-900 flex flex-col h-full z-30 md:static md:translate-x-0 fixed top-0 left-0 transition-transform duration-300 md:block ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } md:!translate-x-0`}
         style={{ height: "100vh" }}
@@ -329,7 +326,7 @@ const SessionsTab: React.FC = () => {
               placeholder="Search sessions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-amber-400"
+              className="w-full pl-10 pr-4 py-2 bg-black rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-amber-400"
             />
           </div>
         </div>
@@ -338,7 +335,7 @@ const SessionsTab: React.FC = () => {
         <div className="overflow-y-auto max-h-[calc(100vh-80px)] custom-scrollbar">
           <div className="p-4">
             <div className="flex items-center space-x-2 mb-4">
-              <History className="w-5 h-5 text-amber-400" />
+              <History className="w-5 h-5 text-black" />
               <h3 className="text-white font-medium">History</h3>
             </div>
 
@@ -394,7 +391,7 @@ const SessionsTab: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex bg-slate-900 relative">
+    <div className="h-full flex bg-black relative">
       {isDesktop
         ? renderSidebar()
         : !selectedSession
@@ -416,7 +413,7 @@ const SessionsTab: React.FC = () => {
               </button>
             )}
             {/* Session Info Header - Pinned at top */}
-            <div className="bg-slate-800/30 border-b border-slate-700 p-4 flex-shrink-0 sticky top-0 z-10">
+            {/* <div className="bg-black border-b border-slate-700 p-4 flex-shrink-0 sticky top-0 z-10">
               <div className="max-w-4xl mx-auto">
                 <div className="flex justify-between items-center">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -447,7 +444,7 @@ const SessionsTab: React.FC = () => {
                   </div>
 
                   {/* End Session Button - Only show for active sessions */}
-                  {!sessionDetails.isSessionEnd && (
+            {/* {!sessionDetails.isSessionEnd && (
                     <button
                       onClick={confirmEndSession}
                       className="flex items-center space-x-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-all duration-200"
@@ -459,12 +456,12 @@ const SessionsTab: React.FC = () => {
                   )}
                 </div>
               </div>
-            </div>
+            </div>  */}
 
             {/* Chat Messages */}
             <div
               ref={containerRef} // smart autoscroll container
-              className="relative flex-1 overflow-y-auto p-6 custom-scrollbar min-h-0"
+              className="relative mt-16 flex-1 overflow-y-auto p-6 custom-scrollbar min-h-0"
               style={{
                 maxHeight: sessionDetails.isSessionEnd
                   ? "calc(100vh - 120px)"
@@ -479,18 +476,18 @@ const SessionsTab: React.FC = () => {
                     setHasNewItems(false);
                   }}
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 md:right-8 md:left-auto
-                             z-10 px-3 py-1.5 rounded-full bg-amber-400 text-slate-900
+                             z-10 px-3 py-1.5 rounded-full bg-[#222323] text-slate-900
                              text-sm font-medium shadow border border-amber-500/50"
                   aria-label="Jump to latest messages"
                 >
-                  New messages — Jump to latest
+                  New messages
                 </button>
               )}
 
               <AnimatePresence>
                 {loadingDetails ? (
                   <div className="flex items-center justify-center h-full">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
                   </div>
                 ) : sessionDetails.chats && sessionDetails.chats.length > 0 ? (
                   <div className="max-w-4xl mx-auto space-y-6">
@@ -502,13 +499,7 @@ const SessionsTab: React.FC = () => {
                           animate={{ opacity: 1, y: 0 }}
                           className="flex justify-end"
                         >
-                          <div className="max-w-2xl bg-amber-400/10 border border-amber-400/20 rounded-2xl px-4 py-3">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <UserIcon className="w-4 h-4 text-amber-400" />
-                              <span className="text-xs font-medium text-amber-400">
-                                You
-                              </span>
-                            </div>
+                          <div className="max-w-2xl bg-[#222323] border border-black rounded-2xl px-4 py-3">
                             <div className="text-white text-sm leading-relaxed">
                               {formatMessage(chat.question || "")}
                             </div>
@@ -524,18 +515,21 @@ const SessionsTab: React.FC = () => {
                           animate={{ opacity: 1, y: 0 }}
                           className="flex justify-start"
                         >
-                          <div className="max-w-2xl bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Bot className="w-4 h-4 text-amber-400" />
-                              <span className="text-xs font-medium text-amber-400">
-                                AI Assistant
-                              </span>
-                            </div>
-                            <div className="text-white text-sm leading-relaxed">
-                              {formatMessage(chat.agent_response || "")}
-                            </div>
-                            <div className="text-xs text-slate-400 mt-2">
-                              {formatDate(chat.time)}
+                          {/* AI Response */}
+                          <div className="flex items-start gap-3 max-w-2xl">
+                            <img
+                              src="src/assets/kai-logo.svg"
+                              alt="Logo"
+                              className="w-10 h-10 mt-1"
+                            />
+
+                            <div className="flex-1 bg-black border border-black rounded-2xl px-4 py-3">
+                              <div className="text-white text-sm leading-relaxed">
+                                {formatMessage(chat.agent_response || "")}
+                              </div>
+                              <div className="text-xs text-slate-400 mt-2">
+                                {formatDate(chat.time)}
+                              </div>
                             </div>
                           </div>
                         </motion.div>
@@ -587,28 +581,27 @@ const SessionsTab: React.FC = () => {
 
             {/* Input Area - Only show for active sessions */}
             {!sessionDetails.isSessionEnd && (
-              <div className="p-4 md:p-8 bg-slate-800/30 backdrop-blur-lg flex-shrink-0 border-t border-slate-700">
+              <div className="p-4 md:p-8 bg-black flex-shrink-0">
                 <form
                   onSubmit={handleSubmit}
-                  className="max-w-full md:max-w-4xl mx-auto"
+                  className="max-w-full md:max-w-[720px] mx-auto"
                 >
-                  <div className="relative">
-                    <div className="flex items-center space-x-3 bg-slate-900/50 border border-slate-700/50 rounded-xl p-3 hover:border-slate-600 transition-colors">
-                      <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Continue the conversation..."
-                        className="flex-1 bg-transparent text-white placeholder-slate-400 focus:outline-none"
-                      />
-                      <button
-                        type="submit"
-                        disabled={!input.trim()}
-                        className="p-2 bg-amber-400 hover:bg-amber-500 disabled:bg-slate-700/50 disabled:text-slate-400 rounded-lg transition-colors"
-                      >
-                        <Send className="w-6 h-6" />
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-3 rounded-full bg-white px-5 py-2.5 shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
+                    <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Speak or type your request..."
+                      className="flex-1 bg-transparent text-black placeholder-neutral-400 focus:outline-none text-[15px]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!input.trim()}
+                      className="grid h-8 w-8 place-items-center rounded-full bg-black"
+                      title="Send"
+                    >
+                      <Mic className="h-4 w-4 text-white" />
+                    </button>
                   </div>
                 </form>
               </div>
@@ -618,8 +611,8 @@ const SessionsTab: React.FC = () => {
           // Default state when no session is selected - Grok style
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center max-w-2xl mx-auto px-8">
-              <div className="w-16 h-16 bg-amber-400/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <MessageSquare className="w-8 h-8 text-amber-400" />
+              <div className="w-16 h-16 bg-[#222323] rounded-full flex items-center justify-center mx-auto mb-6">
+                <MessageSquare className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-2xl font-medium text-white mb-4">
                 Welcome to Your Chat History

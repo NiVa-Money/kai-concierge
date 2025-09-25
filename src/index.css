@@ -19,7 +19,7 @@
 
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: #f59e0b #1e293b;
+    scrollbar-color: white black;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
