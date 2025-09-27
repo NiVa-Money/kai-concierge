@@ -1349,7 +1349,7 @@ const ChatTab: React.FC<ChatTabProps> = ({ goToProfile }) => {
           {/* Left: logo */}
           <div className="flex items-center space-x-4">
             <img
-              src="src/assets/kai-logo.svg"
+              src="/assets/kai-logo.svg"
               alt="Logo"
               className="w-10 h-10"
             />

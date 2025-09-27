@@ -444,17 +444,17 @@ const SessionsTab: React.FC = () => {
                   </div>
 
                   {/* End Session Button - Only show for active sessions */}
-            {/* {!sessionDetails.isSessionEnd && (
+            {!sessionDetails.isSessionEnd && (
                     <button
                       onClick={confirmEndSession}
-                      className="flex items-center space-x-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-all duration-200"
+                      className="flex items-center space-x-2 mt-10 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-all duration-200"
                       title="End this session"
                     >
                       <Square className="w-4 h-4" />
                       <span>End Session</span>
                     </button>
                   )}
-                </div>
+                {/* </div>
               </div>
             </div>  */}
 
@@ -518,7 +518,7 @@ const SessionsTab: React.FC = () => {
                           {/* AI Response */}
                           <div className="flex items-start gap-3 max-w-2xl">
                             <img
-                              src="src/assets/kai-logo.svg"
+                              src="/assets/kai-logo.svg"
                               alt="Logo"
                               className="w-10 h-10 mt-1"
                             />
